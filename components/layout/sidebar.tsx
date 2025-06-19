@@ -58,6 +58,15 @@ export default function Sidebar({ onClose }: SidebarProps) {
             <span>Sản phẩm</span>
           </Link>
 
+          {/* // Thêm vào phần menu, sau menu "Sản phẩm" */}
+          <Link
+            href="/variants"
+            className={`flex items-center px-3 py-3 rounded-lg text-gray-700 hover:bg-gray-50 ${isActive("/variants") ? "active-menu" : ""}`}
+          >
+            <i className="fas fa-layer-group w-6 text-center mr-3"></i>
+            <span>Biến thể sản phẩm</span>
+          </Link>
+
           <Link
             href="/categories"
             className={`flex items-center px-3 py-3 rounded-lg text-gray-700 hover:bg-gray-50 ${isActive("/categories") ? "active-menu" : ""}`}
