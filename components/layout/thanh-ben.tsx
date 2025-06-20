@@ -1,7 +1,11 @@
 "use client"
 
+import { persistor, RootState } from "@/app/redux/store"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { useDispatch, useSelector } from "react-redux"
+import Cookies from "js-cookie";
+import { logoutUser } from "@/app/redux/authSlice"
 
 interface ThanhBenProps {
   onClose?: () => void
@@ -13,7 +17,25 @@ export default function ThanhBen({ onClose }: ThanhBenProps) {
   const isActive = (path: string) => {
     return pathname === path
   }
+  // Lấy thông tin người dùng từ redux store
+  const customer: any = useSelector((state: RootState) => state.auth.currentUser);
+  const dispatch = useDispatch();
 
+  const handleLogout = async () => {
+    // 1. Xóa cookie
+    Cookies.remove("user");
+
+    // 2. RESET Redux slice
+    dispatch(logoutUser());
+
+    // 3. Xóa redux-persist storage (async)
+    await persistor.purge();
+
+    // 4. Chờ một chút (đảm bảo mọi thứ đã sạch) rồi redirect
+    setTimeout(() => {
+      window.location.replace("http://localhost:3003/sign-in?logout=true");
+    }, 100);
+  };
   return (
     <aside className="w-64 bg-white shadow-md flex flex-col">
       {/* Brand */}
@@ -30,11 +52,20 @@ export default function ThanhBen({ onClose }: ThanhBenProps) {
 
       {/* User Profile */}
       <div className="px-6 py-4 border-b border-gray-100 flex items-center space-x-3">
-        <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-primary">
-          <i className="fas fa-user"></i>
+        <div className="w-10 h-10 rounded-full overflow-hidden border border-[#ebbd5b] bg-gray-200">
+          {customer &&
+            <img
+              src={customer.avatar || 'https://res.cloudinary.com/dohwmkapy/image/upload/v1749871081/default-avatar_rwg8qu.webp'}
+              alt={customer.ho_ten || 'Avatar'}
+              className="object-cover object-center"
+            />
+          }
         </div>
         <div>
-          <p className="font-medium">Quản trị viên</p>
+          {
+            customer &&
+            <p className="font-medium">{customer.ho_ten}</p>
+          }
           <p className="text-xs text-gray-500">Super Admin</p>
         </div>
       </div>
@@ -65,7 +96,7 @@ export default function ThanhBen({ onClose }: ThanhBenProps) {
             <i className="fas fa-layer-group w-6 text-center mr-3"></i>
             <span>Biến thể sản phẩm</span>
           </Link>
-          
+
           <Link
             href="/categories"
             className={`flex items-center px-3 py-3 rounded-lg text-gray-700 hover:bg-gray-50 ${isActive("/categories") ? "active-menu" : ""}`}
@@ -126,10 +157,12 @@ export default function ThanhBen({ onClose }: ThanhBenProps) {
 
       {/* Footer */}
       <div className="px-6 py-4 border-t border-gray-100">
-        <Link href="/logout" className="flex items-center text-gray-700 hover:text-primary">
+        <button className="flex items-center text-gray-700 hover:text-[#EBBD5B] transition-colors"
+          onClick={handleLogout}
+        >
           <i className="fas fa-sign-out-alt mr-3"></i>
           <span>Đăng xuất</span>
-        </Link>
+        </button>
       </div>
     </aside>
   )

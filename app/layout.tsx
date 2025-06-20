@@ -1,7 +1,11 @@
+"use client";
 import type React from "react"
 import "./globals.css"
-import type { Metadata } from "next"
 import { Poppins } from "next/font/google"
+import { store, persistor } from "./redux/store";
+import { Provider } from "react-redux";
+import { PersistGate } from "redux-persist/integration/react";
+import AppWrapper from "./AppWrapper";
 
 // Initialize the Poppins font - đúng theo HTML
 const poppins = Poppins({
@@ -9,12 +13,6 @@ const poppins = Poppins({
   display: "swap",
   weight: ["300", "400", "500", "600"],
 })
-
-export const metadata: Metadata = {
-  title: "LUXE Admin",
-  description: "Hệ thống quản lý LUXE",
-    generator: 'v0.dev'
-}
 
 export default function RootLayout({
   children,
@@ -26,7 +24,15 @@ export default function RootLayout({
       <head>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
       </head>
-      <body style={{ backgroundColor: "#f9fafb" }}>{children}</body>
+      <body style={{ backgroundColor: "#f9fafb" }}>
+        <Provider store={store}>
+          <PersistGate loading={null} persistor={persistor}>
+            <AppWrapper>
+              {children}
+            </AppWrapper>
+          </PersistGate>
+        </Provider>
+      </body>
     </html>
   )
 }

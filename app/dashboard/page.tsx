@@ -1,10 +1,13 @@
+"use client";
 import BoCucAdmin from "@/components/layout/bo-cuc-admin"
 import ThongKeTongQuan from "@/components/dashboard/thong-ke-tong-quan"
 import DonHangGanDay from "@/components/dashboard/don-hang-gan-day"
 import SanPhamBanChay from "@/components/dashboard/san-pham-ban-chay"
 import ThaoTacNhanh from "@/components/dashboard/thao-tac-nhanh"
+import useAuthGuard from "../hooks/useAuthGuard"
 
 export default function DashboardPage() {
+  useAuthGuard();
   return (
     <BoCucAdmin title="Tổng quan Dashboard">
       <ThongKeTongQuan />
