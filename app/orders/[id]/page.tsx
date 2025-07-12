@@ -1,241 +1,247 @@
 "use client"
 
-import type React from "react"
-
-import { useState, useEffect } from "react"
-import { useParams } from "next/navigation"
+import { useState, useEffect, useCallback } from "react"
+import { useParams, useRouter } from "next/navigation"
+import Image from "next/image";
+import { getOrderById, updateOrderStatus } from "@/lib/orderService"
+import NhanTrangThai from "@/components/ui/nhan-trang-thai"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import useAuthGuard from "@/app/hooks/useAuthGuard";
 
 export default function OrderDetailPage() {
-  const params = useParams()
-  const [orderData, setOrderData] = useState<any>(null)
-  const [status, setStatus] = useState("")
-  const [shipperId, setShipperId] = useState("")
+  useAuthGuard();
+
+  const params = useParams();
+  const router = useRouter();
+  const orderId = params.id as string;
+
+  const [order, setOrder] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const [selectedStatus, setSelectedStatus] = useState("");
+  const [shipperId, setShipperId] = useState("");
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  const fetchData = useCallback(async () => {
+    if (!orderId) return;
+    setIsLoading(true);
+    try {
+      const orderRes = await getOrderById(orderId);
+      if (orderRes.success) {
+        setOrder(orderRes.data);
+      } else {
+        throw new Error(orderRes.message || "Không thể tải dữ liệu đơn hàng.");
+      }
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [orderId]);
 
   useEffect(() => {
-    // Mock data loading - đúng theo HTML
-    setOrderData({
-      id: "#LX-10025",
-      customer: {
-        name: "Nguyễn Văn A",
-        email: "nguyenvana@email.com",
-        phone: "0987654321",
-        address: "123 Đường ABC, Quận 1, TP.HCM",
-      },
-      items: [
-        {
-          id: 1,
-          name: "Áo thun nam cao cấp",
-          code: "SP-001",
-          price: "1.999.999₫",
-          quantity: 2,
-          total: "3.999.998₫",
-        },
-        {
-          id: 2,
-          name: "Quần jean nam",
-          code: "SP-002",
-          price: "2.500.000₫",
-          quantity: 1,
-          total: "2.500.000₫",
-        },
-      ],
-      summary: {
-        subtotal: "6.499.998₫",
-        shipping: "30.000₫",
-        discount: "500.000₫",
-        total: "6.029.998₫",
-      },
-      status: "Chờ xử lý",
-      orderDate: "15/05/2025",
-    })
-  }, [params.id])
+    fetchData();
+  }, [fetchData]);
 
-  const handleStatusUpdate = (e: React.FormEvent) => {
-    e.preventDefault()
-    alert("Đã cập nhật trạng thái đơn hàng!")
-  }
+  const getNextAvailableStatuses = (currentStatus: string): string[] => {
+    if (currentStatus === 'Chờ xác nhận') return ['Đã xác nhận'];
+    if (currentStatus === 'Đã xác nhận') return ['Shipper đã nhận hàng'];
+    return [];
+  };
 
-  const handlePrint = () => {
-    window.print()
-  }
+  const handleUpdate = async () => {
+    if (!selectedStatus) {
+      alert("Vui lòng chọn trạng thái mới.");
+      return;
+    }
 
-  if (!orderData) {
-    return <div>Loading...</div>
-  }
+    const payload: { trang_thai_don_hang: string; id_shipper?: string } = {
+      trang_thai_don_hang: selectedStatus,
+    };
+
+    if (selectedStatus === 'Đã xác nhận') {
+      if (!shipperId.trim()) {
+        alert("Vui lòng nhập ID shipper để xác nhận đơn hàng.");
+        return;
+      }
+      payload.id_shipper = shipperId.trim();
+    }
+
+    setIsUpdating(true);
+    try {
+      const res = await updateOrderStatus(orderId, payload);
+      if (res.success) {
+        alert("Cập nhật thành công!");
+        setOrder(res.data);
+        setSelectedStatus("");
+        setShipperId("");
+      } else {
+        throw new Error(res.message);
+      }
+    } catch (err: any) {
+      alert(`Cập nhật thất bại: ${err.message}`);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const formatCurrency = (amount: number) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
+  const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString('vi-VN');
+  const mapStatusToType = (status: string): string => {
+    const statusMap: { [key: string]: string } = {
+      'Chờ xác nhận': 'pending',
+      'Đã xác nhận': 'processing',
+      'Shipper đã nhận hàng': 'shipping',
+    };
+    return statusMap[status] || 'default';
+  };
+
+  if (isLoading) return <div className="p-4 text-center">Đang tải dữ liệu đơn hàng...</div>;
+  if (error) return <div className="p-4 text-center text-red-500">Lỗi: {error}</div>;
+  if (!order) return <div className="p-4 text-center">Không tìm thấy đơn hàng.</div>;
+
+  const availableStatuses = getNextAvailableStatuses(order.trang_thai_don_hang);
 
   return (
-    <div className="bg-gray-50" style={{ fontFamily: "'Poppins', sans-serif" }}>
-      <div className="container mx-auto px-4 py-8">
-        <div className="bg-white rounded-lg shadow-md p-6">
-          {/* Header - đúng theo HTML */}
-          <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl font-bold">Chi tiết đơn hàng #LX-10025</h1>
-            <button onClick={handlePrint} className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200">
-              <i className="fas fa-print mr-2"></i>In hóa đơn
-            </button>
-          </div>
-
-          {/* Customer Information - đúng theo HTML */}
-          <div className="mb-8">
-            <h3 className="text-lg font-medium mb-4 pb-2 border-b border-gray-200">Thông tin khách hàng</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <p className="text-sm text-gray-500 mb-1">Họ tên</p>
-                <p className="font-medium">Nguyễn Văn A</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500 mb-1">Email</p>
-                <p className="font-medium">nguyenvana@email.com</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500 mb-1">Số điện thoại</p>
-                <p className="font-medium">0987654321</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500 mb-1">Địa chỉ</p>
-                <p className="font-medium">123 Đường ABC, Quận 1, TP.HCM</p>
-              </div>
+    <div className="p-4 md:p-8 bg-gray-50 min-h-screen">
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between border-b pb-4">
+          <CardTitle>Chi tiết đơn hàng #{order.ma_don_hang}</CardTitle>
+          <Button variant="outline" onClick={() => window.print()}>In hóa đơn</Button>
+        </CardHeader>
+        <CardContent className="pt-6 space-y-8">
+          {/* Phần thông tin khách hàng */}
+          <section>
+            <h3 className="font-semibold text-lg mb-4">Thông tin khách hàng</h3>
+            <div className="grid gap-2 md:grid-cols-2">
+              {/* SỬA LỖI Ở ĐÂY: Kiểm tra cả 2 nơi để lấy họ tên */}
+              <div><strong>Họ tên:</strong> {order.ho_ten || order.id_customer?.ho_ten || 'Không có'}</div>
+              <div><strong>Email:</strong> {order.email || order.id_customer?.email || 'Không có'}</div>
+              <div><strong>SĐT:</strong> {order.sdt || order.id_customer?.sdt || 'Không có'}</div>
+              <div><strong>Địa chỉ:</strong> {order.dia_chi_giao_hang}</div>
             </div>
-          </div>
+          </section>
 
-          {/* Order Details - đúng theo HTML */}
-          <div className="mb-8">
-            <h3 className="text-lg font-medium mb-4 pb-2 border-b border-gray-200">Chi tiết đơn hàng</h3>
+          {/* Phần Chi tiết đơn hàng */}
+          <section>
+            <h3 className="font-semibold text-lg mb-4">Chi tiết đơn hàng</h3>
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Sản phẩm
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Đơn giá
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Số lượng
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Thành tiền
-                    </th>
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b text-left text-gray-500 uppercase text-xs">
+                    <th className="py-2 font-medium">Sản phẩm</th>
+                    <th className="py-2 font-medium text-right">Đơn giá</th>
+                    <th className="py-2 font-medium text-center">Số lượng</th>
+                    <th className="py-2 font-medium text-right">Thành tiền</th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  <tr>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="flex-shrink-0 h-10 w-10 bg-gray-200 rounded-md"></div>
-                        <div className="ml-4">
-                          <div className="text-sm font-medium">Áo thun nam cao cấp</div>
-                          <div className="text-sm text-gray-500">Mã: SP-001</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">1.999.999₫</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">2</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">3.999.998₫</td>
-                  </tr>
-                  <tr>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="flex-shrink-0 h-10 w-10 bg-gray-200 rounded-md"></div>
-                        <div className="ml-4">
-                          <div className="text-sm font-medium">Quần jean nam</div>
-                          <div className="text-sm text-gray-500">Mã: SP-002</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">2.500.000₫</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">1</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">2.500.000₫</td>
-                  </tr>
+                <tbody>
+                  {order.chi_tiet.map((item: any, index: number) => {
+                    // SỬA LỖI Ở ĐÂY: Kiểm tra xem id_variant có phải là object không
+                    const isVariantPopulated = typeof item.id_variant === 'object' && item.id_variant !== null;
+
+                    return (
+                      <tr key={index} className="border-b">
+                        <td className="py-4">
+                          <div className="flex items-center gap-4">
+                            <div className="w-16 h-16 bg-gray-100 rounded-md flex-shrink-0">
+                              <Image
+                                src={isVariantPopulated ? item.id_variant.hinh_chinh : '/placeholder.svg'}
+                                alt={isVariantPopulated ? item.id_variant.ten_sp : 'Hình ảnh sản phẩm'}
+                                width={64}
+                                height={64}
+                                className="object-cover w-full h-full rounded-md"
+                              />
+                            </div>
+                            <div>
+                              <div className="font-medium">{isVariantPopulated ? item.id_variant.ten_sp : 'Sản phẩm không xác định'}</div>
+                              <div className="text-xs text-gray-500">Mã: {isVariantPopulated ? item.id_variant.sku : 'N/A'}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-4 text-right">{formatCurrency(item.gia)}</td>
+                        <td className="py-4 text-center">x {item.so_luong}</td>
+                        <td className="py-4 text-right font-medium">{formatCurrency(item.gia * item.so_luong)}</td>
+                      </tr>
+                    )
+                  })}
                 </tbody>
               </table>
             </div>
-          </div>
+          </section>
 
-          {/* Order Summary - đúng theo HTML */}
-          <div className="mb-8">
-            <h3 className="text-lg font-medium mb-4 pb-2 border-b border-gray-200">Tổng kết đơn hàng</h3>
-            <div className="space-y-3">
-              <div className="flex justify-between">
-                <span className="font-medium">Tạm tính:</span>
-                <span className="font-medium">6.499.998₫</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="font-medium">Phí vận chuyển:</span>
-                <span className="font-medium">30.000₫</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="font-medium">Giảm giá:</span>
-                <span className="font-medium">500.000₫</span>
-              </div>
-              <div className="flex justify-between pt-3 border-t border-gray-200">
-                <span className="text-lg font-bold">Tổng cộng:</span>
-                <span className="text-lg font-bold">6.029.998₫</span>
+          {/* Phần tổng kết đơn hàng */}
+          <section className="flex justify-end">
+            <div className="w-full max-w-sm space-y-2">
+              <div className="flex justify-between"><span>Tạm tính:</span> <span>{formatCurrency(order.tong_tien)}</span></div>
+              <div className="flex justify-between"><span>Phí vận chuyển:</span> <span>{formatCurrency(order.phi_van_chuyen || 0)}</span></div>
+              <div className="flex justify-between"><span>Giảm giá:</span> <span className="text-red-500">-{formatCurrency(order.gia_giam || 0)}</span></div>
+              <div className="flex justify-between font-bold text-xl border-t pt-2 mt-2">
+                <span>Tổng cộng:</span>
+                <span className="text-primary">{formatCurrency(order.tong_tien + (order.phi_van_chuyen || 0) - (order.gia_giam || 0))}</span>
               </div>
             </div>
-          </div>
+          </section>
 
-          {/* Order Status - đúng theo HTML */}
-          <div className="mb-8">
-            <h3 className="text-lg font-medium mb-4 pb-2 border-b border-gray-200">Trạng thái đơn hàng</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Phần trạng thái và cập nhật */}
+          <section>
+            <div className="grid gap-6 md:grid-cols-2 mb-6">
               <div>
-                <p className="text-sm text-gray-500 mb-1">Trạng thái hiện tại</p>
-                <div className="inline-block px-3 py-1 bg-yellow-100 text-yellow-800 rounded-md">Chờ xử lý</div>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500 mb-1">Ngày đặt hàng</p>
-                <p className="font-medium">15/05/2025</p>
+                <h3 className="font-semibold text-lg mb-2">Trạng thái đơn hàng</h3>
+                <div className="flex items-center gap-4">
+                  <NhanTrangThai
+                    status={mapStatusToType(order.trang_thai_don_hang)}
+                    customLabel={order.trang_thai_don_hang}
+                  />
+                  <span>(Ngày đặt: {formatDate(order.created_at)})</span>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Update Form - đúng theo HTML */}
-          <div className="border-t border-gray-200 pt-6">
-            <h3 className="text-lg font-medium mb-4">Cập nhật đơn hàng</h3>
-            <form className="space-y-4" onSubmit={handleStatusUpdate}>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Cập nhật trạng thái</label>
-                <select
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value)}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500"
-                >
-                  <option value="">Chọn trạng thái mới</option>
-                  <option value="processing">Đang xử lý</option>
-                  <option value="preparing">Đang chuẩn bị</option>
-                  <option value="shipping">Đang giao hàng</option>
-                  <option value="delivered">Đã giao hàng</option>
-                  <option value="completed">Đã hoàn thành</option>
-                  <option value="cancelled">Đã hủy</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">ID Shipper (nếu có)</label>
-                <input
-                  type="text"
-                  value={shipperId}
-                  onChange={(e) => setShipperId(e.target.value)}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500"
-                  placeholder="Nhập ID shipper"
-                />
-              </div>
-              <div className="flex justify-end space-x-3 pt-4">
-                <button
-                  type="button"
-                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
-                >
-                  Hủy
-                </button>
-                <button type="submit" className="px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600">
-                  Lưu thay đổi
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      </div>
+            {availableStatuses.length > 0 && (
+              <Card className="p-4 bg-gray-50 border">
+                <h3 className="font-semibold text-lg mb-4">Cập nhật đơn hàng</h3>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="status-select">Chọn trạng thái mới</Label>
+                    <Select onValueChange={setSelectedStatus} value={selectedStatus}>
+                      <SelectTrigger id="status-select"><SelectValue placeholder="-- Chọn trạng thái --" /></SelectTrigger>
+                      <SelectContent>
+                        {availableStatuses.map(status => <SelectItem key={status} value={status}>{status}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {selectedStatus === 'Đã xác nhận' && (
+                    <div>
+                      <Label htmlFor="shipper-id">ID Shipper</Label>
+                      <Input
+                        id="shipper-id"
+                        type="text"
+                        value={shipperId}
+                        onChange={(e) => setShipperId(e.target.value)}
+                        placeholder="Nhập ID shipper"
+                      />
+                    </div>
+                  )}
+
+                  <div className="flex justify-end gap-2">
+                    <Button variant="outline" onClick={() => { setSelectedStatus(''); setShipperId(''); }}>Hủy</Button>
+                    <Button onClick={handleUpdate} disabled={isUpdating}>
+                      {isUpdating ? 'Đang lưu...' : 'Lưu thay đổi'}
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+            )}
+          </section>
+        </CardContent>
+      </Card>
     </div>
-  )
+  );
 }
