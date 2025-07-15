@@ -1,56 +1,62 @@
 "use client"
 
-import type React from "react"
-
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { Switch } from "@/components/ui/switch"
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
+import { addCategory } from "@/lib/categoryService"
+import useAuthGuard from "@/app/hooks/useAuthGuard"
 
 export default function AddCategoryPage() {
-  const router = useRouter()
+  useAuthGuard();
+  const router = useRouter();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // State cho form, khớp với schema của backend
   const [formData, setFormData] = useState({
-    name: "",
-    code: "",
-    description: "",
-    status: "active",
-  })
-  const [imagePreview, setImagePreview] = useState<string | null>(null)
+    ten_loai: "",
+    mo_ta: "",
+    hinh: "", // Backend đang nhận URL hình ảnh
+    thu_tu: 0,
+    an_hien: true,
+  });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target
+    const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: value,
-    }))
-  }
+      [name]: name === 'thu_tu' ? parseInt(value) || 0 : value,
+    }));
+  };
 
-  const handleStatusChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleStatusChange = (checked: boolean) => {
     setFormData((prev) => ({
       ...prev,
-      status: e.target.value,
-    }))
-  }
+      an_hien: checked,
+    }));
+  };
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        setImagePreview(e.target?.result as string)
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    try {
+      const result = await addCategory(formData);
+      if (result.success) {
+        alert("Thêm danh mục thành công!");
+        router.push("/categories");
+      } else {
+        throw new Error(result.message || "Có lỗi không xác định xảy ra.");
       }
-      reader.readAsDataURL(file)
+    } catch (error: any) {
+      alert(`Thêm thất bại: ${error.message}`);
+    } finally {
+      setIsSubmitting(false);
     }
-  }
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    console.log("Form data:", formData)
-    alert("Danh mục đã được lưu thành công!")
-    router.push("/categories")
-  }
-
-  const handleCancel = () => {
-    router.push("/categories")
-  }
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: "#f9fafb" }}>
@@ -65,49 +71,26 @@ export default function AddCategoryPage() {
               {/* Basic Info */}
               <div>
                 <h3 className="text-lg font-medium text-gray-900 mb-4">Thông tin cơ bản</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
                   <div>
-                    <label htmlFor="category-name" className="block text-sm font-medium text-gray-700 mb-1">
-                      Tên danh mục
-                    </label>
-                    <input
-                      type="text"
-                      id="category-name"
-                      name="name"
-                      value={formData.name}
+                    <Label htmlFor="ten_loai">Tên danh mục</Label>
+                    <Input
+                      id="ten_loai"
+                      name="ten_loai"
+                      value={formData.ten_loai}
                       onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
                       placeholder="Nhập tên danh mục"
                       required
                     />
                   </div>
                   <div>
-                    <label htmlFor="category-code" className="block text-sm font-medium text-gray-700 mb-1">
-                      Mã danh mục
-                    </label>
-                    <input
-                      type="text"
-                      id="category-code"
-                      name="code"
-                      value={formData.code}
+                    <Label htmlFor="mo_ta">Mô tả</Label>
+                    <Textarea
+                      id="mo_ta"
+                      name="mo_ta"
+                      value={formData.mo_ta}
                       onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
-                      placeholder="Nhập mã danh mục"
-                      required
-                    />
-                  </div>
-                  <div className="md:col-span-2">
-                    <label htmlFor="category-description" className="block text-sm font-medium text-gray-700 mb-1">
-                      Mô tả
-                    </label>
-                    <textarea
-                      id="category-description"
-                      name="description"
-                      rows={3}
-                      value={formData.description}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
-                      placeholder="Nhập mô tả danh mục"
+                      placeholder="Nhập mô tả ngắn"
                     />
                   </div>
                 </div>
@@ -115,88 +98,48 @@ export default function AddCategoryPage() {
 
               {/* Image Upload */}
               <div>
-                <h3 className="text-lg font-medium text-gray-900 mb-4">Hình ảnh</h3>
-                <div className="flex items-center justify-center w-full">
-                  <label
-                    htmlFor="dropzone-file"
-                    className="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100"
-                  >
-                    {imagePreview ? (
-                      <img
-                        src={imagePreview || "/placeholder.svg"}
-                        alt="Preview"
-                        className="w-full h-full object-cover rounded-lg"
-                      />
-                    ) : (
-                      <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                        <i className="fas fa-cloud-upload-alt text-3xl text-gray-400 mb-3"></i>
-                        <p className="mb-2 text-sm text-gray-500">
-                          <span className="font-semibold">Click để tải lên</span> hoặc kéo thả
-                        </p>
-                        <p className="text-xs text-gray-500">PNG, JPG, JPEG (Kích thước tối đa: 5MB)</p>
-                      </div>
-                    )}
-                    <input
-                      id="dropzone-file"
-                      type="file"
-                      className="hidden"
-                      accept="image/*"
-                      onChange={handleImageChange}
+                <h3 className="text-lg font-medium text-gray-900 mb-4">Hiển thị</h3>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="hinh">URL Hình ảnh</Label>
+                    <Input
+                      id="hinh"
+                      name="hinh"
+                      value={formData.hinh}
+                      onChange={handleInputChange}
+                      placeholder="https://example.com/image.jpg"
                     />
-                  </label>
-                </div>
-              </div>
-
-              {/* Status */}
-              <div>
-                <h3 className="text-lg font-medium text-gray-900 mb-4">Trạng thái</h3>
-                <div className="flex items-center">
-                  <input
-                    id="active-status"
-                    name="status"
-                    type="radio"
-                    value="active"
-                    checked={formData.status === "active"}
-                    onChange={handleStatusChange}
-                    className="h-4 w-4 text-yellow-500 focus:ring-yellow-500 border-gray-300"
-                  />
-                  <label htmlFor="active-status" className="ml-2 block text-sm text-gray-900">
-                    Đang bán
-                  </label>
-                </div>
-                <div className="flex items-center mt-2">
-                  <input
-                    id="inactive-status"
-                    name="status"
-                    type="radio"
-                    value="inactive"
-                    checked={formData.status === "inactive"}
-                    onChange={handleStatusChange}
-                    className="h-4 w-4 text-yellow-500 focus:ring-yellow-500 border-gray-300"
-                  />
-                  <label htmlFor="inactive-status" className="ml-2 block text-sm text-gray-900">
-                    Tạm ngưng
-                  </label>
+                  </div>
+                  <div>
+                    <Label htmlFor="thu_tu">Thứ tự</Label>
+                    <Input
+                      id="thu_tu"
+                      name="thu_tu"
+                      type="number"
+                      value={formData.thu_tu}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                  <div className="flex items-center space-x-2 pt-2">
+                    <Switch id="an_hien" checked={formData.an_hien} onCheckedChange={handleStatusChange} />
+                    <Label htmlFor="an_hien">Hiển thị</Label>
+                  </div>
                 </div>
               </div>
             </div>
 
             {/* Form Actions */}
             <div className="flex justify-end space-x-3 mt-8">
-              <button
-                type="button"
-                onClick={handleCancel}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50"
-              >
+              <Button type="button" variant="outline" onClick={() => router.push("/categories")}>
                 Hủy bỏ
-              </button>
-              <button type="submit" className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600">
-                Lưu danh mục
-              </button>
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? 'Đang lưu...' : 'Lưu danh mục'}
+              </Button>
             </div>
           </form>
         </div>
       </div>
     </div>
-  )
+  );
 }

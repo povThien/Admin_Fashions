@@ -4,12 +4,12 @@ import Link from "next/link"
 import ThanhTimKiem from "@/components/ui/thanh-tim-kiem"
 
 interface ThaoTacSanPhamProps {
-  onSearch: (query: string) => void
-  searchQuery: string
-  onToggleAdvancedFilter: () => void
-  showAdvancedFilter: boolean
-  onResetFilters: () => void
-  totalResults: number
+  onSearch: (query: string) => void;
+  searchQuery: string;
+  onToggleAdvancedFilter: () => void;
+  showAdvancedFilter: boolean;
+  onResetFilters: () => void;
+  totalResults: number;
 }
 
 export default function ThaoTacSanPham({
@@ -38,11 +38,10 @@ export default function ThaoTacSanPham({
           {/* Nút bộ lọc nâng cao */}
           <button
             onClick={onToggleAdvancedFilter}
-            className={`px-4 py-2 border rounded-lg flex items-center gap-2 transition-colors ${
-              showAdvancedFilter
+            className={`px-4 py-2 border rounded-lg flex items-center gap-2 transition-colors ${showAdvancedFilter
                 ? "bg-blue-50 border-blue-300 text-blue-700"
                 : "border-gray-300 text-gray-700 hover:bg-gray-50"
-            }`}
+              }`}
           >
             <i className="fas fa-filter"></i>
             Lọc nâng cao
@@ -93,5 +92,5 @@ export default function ThaoTacSanPham({
         )}
       </div>
     </div>
-  )
+  );
 }

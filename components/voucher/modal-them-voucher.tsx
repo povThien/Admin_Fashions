@@ -1,8 +1,12 @@
 "use client"
 
 import type React from "react"
-
 import { useState, useEffect } from "react"
+import { Button } from "../ui/button"
+import { Input } from "../ui/input"
+import { Label } from "../ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select"
+import { Textarea } from "../ui/textarea"
 
 interface ModalThemVoucherProps {
   isOpen: boolean
@@ -11,189 +15,99 @@ interface ModalThemVoucherProps {
 }
 
 export default function ModalThemVoucher({ isOpen, onClose, onSave }: ModalThemVoucherProps) {
-  const [voucherCode, setVoucherCode] = useState("")
-  const [voucherType, setVoucherType] = useState("")
-  const [discountValue, setDiscountValue] = useState("")
-  const [maxDiscount, setMaxDiscount] = useState("")
-  const [minOrder, setMinOrder] = useState("")
-  const [expiryDate, setExpiryDate] = useState("")
+  const [formData, setFormData] = useState({
+    code: "",
+    description: "",
+    discount_type: "percent",
+    discount_value: "",
+    max_discount_value: "",
+    min_order_value: "",
+    start_date: "",
+    end_date: "",
+  });
 
   useEffect(() => {
     if (isOpen) {
-      // Set min date to today
-      const today = new Date().toISOString().split("T")[0]
-      document.getElementById("expiryDate")?.setAttribute("min", today)
+      const today = new Date().toISOString().split("T")[0];
+      setFormData(prev => ({ ...prev, start_date: today }));
     }
-  }, [isOpen])
+  }, [isOpen]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleTypeChange = (value: 'percent' | 'fixed') => {
+    setFormData(prev => ({ ...prev, discount_type: value }));
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
+    onSave(formData);
+    onClose(); // Đóng modal sau khi lưu
+  };
 
-    const voucherData = {
-      code: voucherCode,
-      type: voucherType,
-      discountValue,
-      maxDiscount: voucherType === "limited" ? maxDiscount : null,
-      minOrder,
-      expiryDate,
-    }
-
-    onSave(voucherData)
-    resetForm()
-  }
-
-  const resetForm = () => {
-    setVoucherCode("")
-    setVoucherType("")
-    setDiscountValue("")
-    setMaxDiscount("")
-    setMinOrder("")
-    setExpiryDate("")
-  }
-
-  if (!isOpen) return null
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
-      <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-        <div className="fixed inset-0 transition-opacity" aria-hidden="true">
-          <div className="absolute inset-0 bg-gray-500 opacity-75" onClick={onClose}></div>
-        </div>
-        <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">
-          ​
-        </span>
-        <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-          <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-            <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">Thêm voucher mới</h3>
-            <form id="voucherForm" onSubmit={handleSubmit}>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="fixed inset-0 bg-black bg-opacity-50" onClick={onClose}></div>
+        <div className="relative bg-white rounded-lg shadow-xl w-full max-w-lg m-4">
+          <form onSubmit={handleSubmit}>
+            <div className="p-6">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Thêm voucher mới</h3>
               <div className="grid grid-cols-1 gap-4">
-                {/* Voucher Code */}
                 <div>
-                  <label htmlFor="voucherCode" className="block text-sm font-medium text-gray-700 mb-1">
-                    Mã voucher
-                  </label>
-                  <input
-                    type="text"
-                    id="voucherCode"
-                    name="voucherCode"
-                    value={voucherCode}
-                    onChange={(e) => setVoucherCode(e.target.value)}
-                    required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                  />
+                  <Label htmlFor="code">Mã voucher</Label>
+                  <Input id="code" name="code" value={formData.code} onChange={handleInputChange} required />
                 </div>
-
-                {/* Voucher Type */}
                 <div>
-                  <label htmlFor="voucherType" className="block text-sm font-medium text-gray-700 mb-1">
-                    Loại voucher
-                  </label>
-                  <select
-                    id="voucherType"
-                    name="voucherType"
-                    value={voucherType}
-                    onChange={(e) => setVoucherType(e.target.value)}
-                    required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                  >
-                    <option value="">Chọn loại</option>
-                    <option value="percentage">Giảm theo %</option>
-                    <option value="fixed">Giảm trực tiếp</option>
-                    <option value="limited">Giảm có giới hạn</option>
-                  </select>
+                  <Label htmlFor="description">Mô tả</Label>
+                  <Textarea id="description" name="description" value={formData.description} onChange={handleInputChange} />
                 </div>
-
-                {/* Discount Value */}
                 <div>
-                  <label htmlFor="discountValue" className="block text-sm font-medium text-gray-700 mb-1">
-                    Giá trị giảm
-                  </label>
-                  <div className="flex">
-                    <input
-                      type="number"
-                      id="discountValue"
-                      name="discountValue"
-                      value={discountValue}
-                      onChange={(e) => setDiscountValue(e.target.value)}
-                      min="1"
-                      required
-                      className="w-full px-4 py-2 border border-gray-300 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                    />
-                    <span className="inline-flex items-center px-3 bg-gray-100 border border-l-0 border-gray-300 rounded-r-lg text-gray-700">
-                      {voucherType === "fixed" ? "₫" : "%"}
-                    </span>
-                  </div>
+                  <Label>Loại giảm giá</Label>
+                  <Select value={formData.discount_type} onValueChange={handleTypeChange}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="percent">Giảm theo %</SelectItem>
+                      <SelectItem value="fixed">Giảm trực tiếp (VNĐ)</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-
-                {/* Max Discount (for limited type) */}
-                {voucherType === "limited" && (
+                <div>
+                  <Label htmlFor="discount_value">Giá trị giảm</Label>
+                  <Input id="discount_value" name="discount_value" type="number" min="0" value={formData.discount_value} onChange={handleInputChange} required />
+                </div>
+                {formData.discount_type === 'percent' && (
                   <div>
-                    <label htmlFor="maxDiscount" className="block text-sm font-medium text-gray-700 mb-1">
-                      Giảm tối đa (VNĐ)
-                    </label>
-                    <input
-                      type="number"
-                      id="maxDiscount"
-                      name="maxDiscount"
-                      value={maxDiscount}
-                      onChange={(e) => setMaxDiscount(e.target.value)}
-                      min="1"
-                      required
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                    />
+                    <Label htmlFor="max_discount_value">Giảm tối đa (VNĐ)</Label>
+                    <Input id="max_discount_value" name="max_discount_value" type="number" min="0" value={formData.max_discount_value} onChange={handleInputChange} placeholder="Bỏ trống nếu không giới hạn" />
                   </div>
                 )}
-
-                {/* Minimum Order */}
                 <div>
-                  <label htmlFor="minOrder" className="block text-sm font-medium text-gray-700 mb-1">
-                    Đơn hàng tối thiểu (VNĐ)
-                  </label>
-                  <input
-                    type="number"
-                    id="minOrder"
-                    name="minOrder"
-                    value={minOrder}
-                    onChange={(e) => setMinOrder(e.target.value)}
-                    min="0"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                  />
+                  <Label htmlFor="min_order_value">Đơn hàng tối thiểu (VNĐ)</Label>
+                  <Input id="min_order_value" name="min_order_value" type="number" min="0" value={formData.min_order_value} onChange={handleInputChange} placeholder="Bỏ trống nếu không yêu cầu" />
                 </div>
-
-                {/* Expiry Date */}
-                <div>
-                  <label htmlFor="expiryDate" className="block text-sm font-medium text-gray-700 mb-1">
-                    Ngày hết hạn
-                  </label>
-                  <input
-                    type="date"
-                    id="expiryDate"
-                    name="expiryDate"
-                    value={expiryDate}
-                    onChange={(e) => setExpiryDate(e.target.value)}
-                    required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="start_date">Ngày bắt đầu</Label>
+                    <Input id="start_date" name="start_date" type="date" value={formData.start_date} onChange={handleInputChange} required />
+                  </div>
+                  <div>
+                    <Label htmlFor="end_date">Ngày hết hạn</Label>
+                    <Input id="end_date" name="end_date" type="date" value={formData.end_date} onChange={handleInputChange} min={formData.start_date} required />
+                  </div>
                 </div>
               </div>
-            </form>
-          </div>
-          <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-            <button
-              type="submit"
-              form="voucherForm"
-              className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-primary text-white font-medium hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary sm:ml-3 sm:w-auto sm:text-sm"
-            >
-              Lưu voucher
-            </button>
-            <button
-              type="button"
-              onClick={onClose}
-              className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-gray-700 font-medium hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
-            >
-              Hủy bỏ
-            </button>
-          </div>
+            </div>
+            <div className="bg-gray-50 px-6 py-3 flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={onClose}>Hủy bỏ</Button>
+              <Button type="submit">Lưu voucher</Button>
+            </div>
+          </form>
         </div>
       </div>
     </div>

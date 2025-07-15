@@ -36,7 +36,7 @@ export default function ThaoTacNguoiDung({ onSearch }: ThaoTacNguoiDungProps) {
         <i className="fas fa-search absolute left-3 top-3 text-gray-400"></i>
       </div>
       <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
-        <select
+        {/* <select
           value={role}
           onChange={handleRoleChange}
           className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
@@ -44,7 +44,7 @@ export default function ThaoTacNguoiDung({ onSearch }: ThaoTacNguoiDungProps) {
           <option value="">Lọc theo vai trò</option>
           <option value="admin">Admin</option>
           <option value="shipper">Shipper</option>
-        </select>
+        </select> */}
         <Link
           href="/users/add"
           className="bg-primary text-white px-4 py-2 rounded-lg hover:bg-yellow-600 flex items-center justify-center"

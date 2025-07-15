@@ -1,71 +1,90 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useCallback } from "react"
 import BoCucAdmin from "@/components/layout/bo-cuc-admin"
 import ThaoTacDanhMuc from "@/components/danh-muc/thao-tac-danh-muc"
 import BangDanhMuc from "@/components/danh-muc/bang-danh-muc"
-
-const mockCategories = [
-  {
-    id: "1",
-    name: "Đồng hồ",
-    code: "LUX-WATCH",
-    description: "Dòng đồng hồ cao cấp, sang trọng",
-    productCount: 24,
-    status: "active",
-    image: "/placeholder.svg?height=64&width=64",
-  },
-  {
-    id: "2",
-    name: "Trang sức",
-    code: "LUX-JEWELRY",
-    description: "Trang sức phong cách tinh tế",
-    productCount: 18,
-    status: "active",
-    image: "/placeholder.svg?height=64&width=64",
-  },
-  {
-    id: "3",
-    name: "Túi xách",
-    code: "LUX-BAG",
-    description: "Túi da cao cấp thời thượng",
-    productCount: 12,
-    status: "active",
-    image: "/placeholder.svg?height=64&width=64",
-  },
-  {
-    id: "4",
-    name: "Mắt kính",
-    code: "LUX-EYEWEAR",
-    description: "Kính mát thời trang cao cấp",
-    productCount: 8,
-    status: "inactive",
-    image: "/placeholder.svg?height=64&width=64",
-  },
-]
+import { getCategories, deleteCategory } from "@/lib/categoryService"
+import useAuthGuard from "@/app/hooks/useAuthGuard"
 
 export default function CategoriesPage() {
-  const [filteredCategories, setFilteredCategories] = useState(mockCategories)
+  useAuthGuard();
+
+  const [categories, setCategories] = useState([]);
+  const [pagination, setPagination] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const [queryParams, setQueryParams] = useState({
+    page: 1,
+    limit: 6,
+    search: '',
+  });
+
+  const fetchCategories = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const activeParams = Object.fromEntries(
+        Object.entries(queryParams).filter(([_, value]) => value)
+      );
+      const response = await getCategories(activeParams);
+      if (response.success) {
+        setCategories(response.data);
+        setPagination(response.pagination);
+      } else {
+        throw new Error(response.message || "Không thể tải danh sách danh mục");
+      }
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [queryParams]);
+
+  useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
 
   const handleSearch = (query: string) => {
-    if (!query) {
-      setFilteredCategories(mockCategories)
-      return
+    setQueryParams(prev => ({ ...prev, search: query, page: 1 }));
+  };
+
+  const handlePageChange = (page: number) => {
+    setQueryParams(prev => ({ ...prev, page }));
+  };
+
+  const handleDelete = async (id: string) => {
+    if (confirm("Bạn có chắc chắn muốn xóa danh mục này?")) {
+      try {
+        const res = await deleteCategory(id);
+        if (res.success) {
+          alert("Xóa danh mục thành công!");
+          fetchCategories(); // Tải lại danh sách
+        } else {
+          throw new Error(res.message);
+        }
+      } catch (err: any) {
+        alert(`Xóa thất bại: ${err.message}`);
+      }
     }
-
-    const filtered = mockCategories.filter(
-      (category) =>
-        category.name.toLowerCase().includes(query.toLowerCase()) ||
-        category.code.toLowerCase().includes(query.toLowerCase()),
-    )
-
-    setFilteredCategories(filtered)
-  }
+  };
 
   return (
     <BoCucAdmin title="Quản lý danh mục">
       <ThaoTacDanhMuc onSearch={handleSearch} />
-      <BangDanhMuc categories={filteredCategories} />
+
+      {isLoading && <p className="text-center mt-4">Đang tải dữ liệu...</p>}
+      {error && <p className="text-center mt-4 text-red-500">Lỗi: {error}</p>}
+
+      {!isLoading && !error && (
+        <BangDanhMuc
+          categories={categories}
+          pagination={pagination}
+          onPageChange={handlePageChange}
+          onDelete={handleDelete}
+        />
+      )}
     </BoCucAdmin>
-  )
+  );
 }

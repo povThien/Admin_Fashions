@@ -116,3 +116,13 @@ export const getShippers = async () => {
         throw error.response?.data || new Error("Lỗi khi lấy danh sách shipper");
     }
 }
+
+
+export const createOrder = async (orderData: any) => {
+    try {
+        const response = await apiClient.post('/admin/order', orderData);
+        return response.data;
+    } catch (error: any) {
+        throw error.response?.data || new Error("Lỗi khi tạo đơn hàng");
+    }
+};

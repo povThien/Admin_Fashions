@@ -1,47 +1,49 @@
 "use client"
 
 import { Card, CardContent } from "@/components/ui/card"
+import { formatCurrency } from "@/lib/api" // Import formatCurrency
 
 // Interface cho bộ lọc nâng cao
 interface AdvancedFilter {
-  category: string
-  brand: string
+  category: string;
+  brand: string;
   priceRange: {
-    min: number
-    max: number
-  }
-  stockStatus: string
-  status: string
+    min: number;
+    max: number;
+  };
+  stockStatus: string;
+  status: string;
+}
+
+// Interface cho Category/Brand data from API
+interface Category {
+  id: number;
+  ten_loai: string;
+}
+
+interface Brand {
+  id: number;
+  ten_thuong_hieu: string;
 }
 
 interface LocNangCaoProps {
-  filter: AdvancedFilter
-  onFilterChange: (newFilter: Partial<AdvancedFilter>) => void
-  products: any[] // Danh sách tất cả sản phẩm để lấy options
+  filter: AdvancedFilter;
+  onFilterChange: (newFilter: Partial<AdvancedFilter>) => void;
+  categories: Category[]; // Nhận danh sách danh mục từ props
+  brands: Brand[];     // Nhận danh sách thương hiệu từ props
 }
 
-export default function LocNangCao({ filter, onFilterChange, products }: LocNangCaoProps) {
-  // Lấy danh sách danh mục duy nhất từ sản phẩm
-  const categories = [...new Set(products.map((p) => p.category))].filter(Boolean)
-
-  // Lấy danh sách thương hiệu duy nhất từ sản phẩm
-  const brands = [...new Set(products.map((p) => p.brand))].filter(Boolean)
-
-  // Hàm format số tiền thành chuỗi hiển thị
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat("vi-VN").format(price) + "₫"
-  }
-
+export default function LocNangCao({ filter, onFilterChange, categories, brands }: LocNangCaoProps) {
   // Hàm xử lý thay đổi khoảng giá
   const handlePriceRangeChange = (type: "min" | "max", value: string) => {
-    const numValue = Number.parseInt(value) || 0
+    const numValue = Number.parseInt(value) || 0;
     onFilterChange({
       priceRange: {
         ...filter.priceRange,
         [type]: numValue,
       },
-    })
-  }
+    });
+  };
 
   return (
     <Card className="mb-6">
@@ -56,7 +58,7 @@ export default function LocNangCao({ filter, onFilterChange, products }: LocNang
               onFilterChange({
                 category: "",
                 brand: "",
-                priceRange: { min: 0, max: 20000000 },
+                priceRange: { min: 0, max: 2000000000 }, // Reset max price to a large number
                 stockStatus: "",
                 status: "",
               })
@@ -82,8 +84,8 @@ export default function LocNangCao({ filter, onFilterChange, products }: LocNang
             >
               <option value="">Tất cả danh mục</option>
               {categories.map((category) => (
-                <option key={category} value={category}>
-                  {category}
+                <option key={category.id} value={category.ten_loai}>
+                  {category.ten_loai}
                 </option>
               ))}
             </select>
@@ -102,8 +104,8 @@ export default function LocNangCao({ filter, onFilterChange, products }: LocNang
             >
               <option value="">Tất cả thương hiệu</option>
               {brands.map((brand) => (
-                <option key={brand} value={brand}>
-                  {brand}
+                <option key={brand.id} value={brand.ten_thuong_hieu}>
+                  {brand.ten_thuong_hieu}
                 </option>
               ))}
             </select>
@@ -166,7 +168,7 @@ export default function LocNangCao({ filter, onFilterChange, products }: LocNang
                 className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
               />
               <div className="text-xs text-gray-500">
-                {formatPrice(filter.priceRange.min)} - {formatPrice(filter.priceRange.max)}
+                {formatCurrency(filter.priceRange.min)} - {formatCurrency(filter.priceRange.max)}
               </div>
             </div>
           </div>
@@ -212,9 +214,17 @@ export default function LocNangCao({ filter, onFilterChange, products }: LocNang
                 </button>
               </span>
             )}
+            {(filter.priceRange.min > 0 || filter.priceRange.max < 2000000000) && ( // Check if range is actually filtered
+              <span className="inline-flex items-center gap-1 px-2 py-1 bg-orange-100 text-orange-800 rounded text-sm">
+                Giá: {formatCurrency(filter.priceRange.min)} - {formatCurrency(filter.priceRange.max)}
+                <button onClick={() => onFilterChange({ priceRange: { min: 0, max: 2000000000 } })} className="hover:text-orange-600">
+                  <i className="fas fa-times text-xs"></i>
+                </button>
+              </span>
+            )}
           </div>
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }

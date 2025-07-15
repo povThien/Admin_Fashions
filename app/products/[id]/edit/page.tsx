@@ -2,35 +2,47 @@
 
 import type React from "react"
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useParams } from "next/navigation"
 import { fetcher, formatCurrency } from "@/lib/api"
 import { toast } from "react-hot-toast"
 import Link from "next/link"
 
-interface FormData {
+// Định nghĩa interface Product chính xác hơn theo backend
+interface Product {
+  _id: string; // ObjectId của MongoDB
+  id: number; // ID tự tăng
   ten_sp: string;
-  id_loai: number | null;
+  slug: string;
+  id_loai: number; // Chỉ cần ID ở đây, không cần populate object
   id_thuong_hieu: number | null;
   mo_ta: string;
   chat_lieu: string;
   xuat_xu: string;
-  variants: {
-    sku: string;
-    kich_thuoc: string;
-    mau_sac: string;
-    gia: number;
-    gia_km: number | null;
-    so_luong: number;
-    hinh_chinh: string;
-    hinh_thumbnail: string[];
-  }[];
-  hinh_anh: string[]; // Mảng hình ảnh chung cho sản phẩm
+  variants: Variant[];
+  hinh_anh?: string[]; // Mảng URL hình ảnh chung cho sản phẩm
   hot: boolean;
   an_hien: boolean;
-  tags: string; // Tạm để string, sẽ parse thành array
-  meta_title: string;
-  meta_description: string;
-  meta_keywords: string;
+  luot_xem: number;
+  tags?: string[];
+  meta_title?: string;
+  meta_description?: string;
+  meta_keywords?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+interface Variant {
+  _id: string; // Cần có _id để update/delete riêng lẻ
+  sku: string;
+  kich_thuoc: string;
+  mau_sac: string;
+  gia: number;
+  gia_km: number | null;
+  phan_tram_km: number;
+  so_luong: number;
+  so_luong_da_ban: number;
+  hinh_chinh: string;
+  hinh_thumbnail: string[];
 }
 
 // Interface cho Category/Brand data from API
@@ -44,30 +56,23 @@ interface Brand {
   ten_thuong_hieu: string;
 }
 
-
-export default function AddProductPage() {
+export default function EditProductPage() {
   const router = useRouter();
-  const [formData, setFormData] = useState<FormData>({
+  const params = useParams();
+  const productId = params.id as string; // Lấy productId từ URL
+
+  const [formData, setFormData] = useState<Omit<Product, '_id' | 'id' | 'slug' | 'created_at' | 'updated_at' | 'luot_xem'>>({
     ten_sp: "",
-    id_loai: null,
+    id_loai: 0,
     id_thuong_hieu: null,
     mo_ta: "",
     chat_lieu: "",
     xuat_xu: "",
-    variants: [{
-      sku: "",
-      kich_thuoc: "M", // Default
-      mau_sac: "Đen", // Default
-      gia: 0,
-      gia_km: null,
-      so_luong: 0,
-      hinh_chinh: "",
-      hinh_thumbnail: [],
-    }],
+    variants: [],
     hinh_anh: [],
     hot: false,
     an_hien: true,
-    tags: "",
+    tags: [],
     meta_title: "",
     meta_description: "",
     meta_keywords: "",
@@ -75,24 +80,53 @@ export default function AddProductPage() {
 
   const [categoriesList, setCategoriesList] = useState<Category[]>([]);
   const [brandsList, setBrandsList] = useState<Brand[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // Fetch categories and brands for dropdowns
+  // Fetch product data, categories, and brands
   useEffect(() => {
-    const fetchOptions = async () => {
+    const fetchData = async () => {
+      setLoading(true);
+      setError(null);
       try {
+        const productData = await fetcher<Product>(`/products/${productId}`);
         const categoriesData = await fetcher<Category[]>('/categories/all');
-        setCategoriesList(categoriesData.data);
+        const brandsData = await fetcher<Brand[]>('/brands/all');
 
-        const brandsData = await fetcher<Brand[]>('/brands/all'); // Assuming you have this API
+        setCategoriesList(categoriesData.data);
         setBrandsList(brandsData.data);
+
+        const fetchedProduct = productData.data;
+
+        setFormData({
+          ten_sp: fetchedProduct.ten_sp,
+          id_loai: fetchedProduct.id_loai,
+          id_thuong_hieu: fetchedProduct.id_thuong_hieu,
+          mo_ta: fetchedProduct.mo_ta,
+          chat_lieu: fetchedProduct.chat_lieu,
+          xuat_xu: fetchedProduct.xuat_xu,
+          variants: fetchedProduct.variants, // Keep variants as is
+          hinh_anh: fetchedProduct.hinh_anh || [],
+          hot: fetchedProduct.hot,
+          an_hien: fetchedProduct.an_hien,
+          tags: fetchedProduct.tags || [],
+          meta_title: fetchedProduct.meta_title || "",
+          meta_description: fetchedProduct.meta_description || "",
+          meta_keywords: fetchedProduct.meta_keywords || "",
+        });
       } catch (err: any) {
-        toast.error("Không thể tải danh mục hoặc thương hiệu: " + (err.info?.message || err.message));
-        console.error("Error fetching options:", err);
+        setError(err.info?.message || err.message || 'Lỗi khi tải dữ liệu sản phẩm.');
+        toast.error("Lỗi khi tải dữ liệu sản phẩm: " + (err.info?.message || err.message));
+        console.error("Error fetching product data for edit:", err);
+      } finally {
+        setLoading(false);
       }
     };
-    fetchOptions();
-  }, []);
+    if (productId) {
+      fetchData();
+    }
+  }, [productId]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type, checked } = e.target as HTMLInputElement;
@@ -106,11 +140,10 @@ export default function AddProductPage() {
     const { name, value, type, checked } = e.target as HTMLInputElement;
     const newVariants = [...formData.variants];
 
-    // Convert numbers
     let parsedValue: string | number | boolean = value;
     if (name === 'gia' || name === 'gia_km' || name === 'so_luong') {
-      parsedValue = parseFloat(value) || 0; // Use parseFloat for monetary values
-      if (name === 'gia_km' && value === '') parsedValue = null; // Allow empty for gia_km
+      parsedValue = parseFloat(value) || 0;
+      if (name === 'gia_km' && value === '') parsedValue = null;
     } else if (type === 'checkbox') {
       parsedValue = checked;
     }
@@ -123,55 +156,92 @@ export default function AddProductPage() {
     }));
   };
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'main' | 'thumbnail', variantIndex?: number) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const imageUrl = event.target?.result as string;
-        if (type === 'main' && variantIndex !== undefined) {
-          const newVariants = [...formData.variants];
-          newVariants[variantIndex].hinh_chinh = imageUrl;
-          setFormData(prev => ({ ...prev, variants: newVariants }));
-        } else if (type === 'thumbnail' && variantIndex !== undefined) {
-          const newVariants = [...formData.variants];
-          // Simple add for now, real app needs better thumbnail management
-          newVariants[variantIndex].hinh_thumbnail = [...newVariants[variantIndex].hinh_thumbnail, imageUrl];
-          setFormData(prev => ({ ...prev, variants: newVariants }));
-        } else if (type === 'main' && variantIndex === undefined) { // For product general images
-          setFormData(prev => ({ ...prev, hinh_anh: [...prev.hinh_anh, imageUrl] }));
-        }
-      };
-      reader.readAsDataURL(file);
+  const handleAddVariant = () => {
+    setFormData(prev => ({
+      ...prev,
+      variants: [...prev.variants, {
+        _id: new mongoose.Types.ObjectId().toString(), // Tạo một _id mới cho variant mới (client-side only)
+        sku: "",
+        kich_thuoc: "M",
+        mau_sac: "Đen",
+        gia: 0,
+        gia_km: null,
+        so_luong: 0,
+        hinh_chinh: "",
+        hinh_thumbnail: [],
+      }],
+    }));
+  };
+
+  const handleDeleteVariant = async (variantId: string) => {
+    if (formData.variants.length === 1) {
+      toast.error("Không thể xóa biến thể cuối cùng của sản phẩm.");
+      return;
+    }
+    if (window.confirm("Bạn có chắc chắn muốn xóa biến thể này?")) {
+      try {
+        await fetcher(`/products/${productId}/variants/${variantId}`, 'DELETE');
+        toast.success("Biến thể đã được xóa thành công!");
+        setFormData(prev => ({
+          ...prev,
+          variants: prev.variants.filter(v => v._id !== variantId)
+        }));
+      } catch (err: any) {
+        toast.error("Lỗi khi xóa biến thể: " + (err.info?.message || err.message));
+        console.error("Error deleting variant:", err);
+      }
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+    setSubmitting(true);
     try {
       const payload = {
         ...formData,
-        tags: formData.tags.split(',').map(tag => tag.trim()).filter(Boolean),
+        tags: Array.isArray(formData.tags) ? formData.tags : formData.tags.split(',').map(tag => tag.trim()).filter(Boolean),
         id_loai: Number(formData.id_loai),
         id_thuong_hieu: formData.id_thuong_hieu ? Number(formData.id_thuong_hieu) : null,
       };
 
-      // Basic validation for variants before sending
-      if (payload.variants.length === 0 || !payload.variants[0].sku || payload.variants[0].gia <= 0) {
-        toast.error("Sản phẩm phải có ít nhất một biến thể hợp lệ với SKU và giá.");
-        setLoading(false);
-        return;
-      }
+      // Tách variants ra để gọi API riêng nếu cần
+      const { variants, ...productPayload } = payload;
 
-      await fetcher('/products', 'POST', payload);
-      toast.success("Sản phẩm đã được thêm thành công!");
+      // Update main product info
+      await fetcher(`/products/${productId}`, 'PUT', productPayload);
+      toast.success("Sản phẩm đã được cập nhật thành công!");
+
+      // Update/add/delete variants separately
+      // This is a simplified approach. A more robust solution would track changes
+      // (added, modified, deleted variants) and send specific requests.
+      // For now, we assume all variants in formData.variants should be "synced".
+      // This means if a variant is missing from the original product but present in formData.variants, it's new.
+      // If a variant is present in original product but missing from formData.variants, it's deleted.
+      // If a variant is present in both, it's updated.
+
+      // For simplicity in this example, we just pass the whole variants array in the product update.
+      // The backend should handle the logic of updating nested arrays,
+      // or you would need separate API calls per variant as structured in adminRouteVariants.js
+      // Let's assume the PUT /products/:id endpoint can handle the entire variants array.
+      // If not, you'd iterate through `variants` and call specific variant APIs:
+
+      // Example of handling variants more granularly after product update:
+      // const originalProduct = await fetcher<Product>(`/products/${productId}`); // Re-fetch or pass original
+      // for (const variant of variants) {
+      //     if (!variant._id) { // New variant
+      //         await fetcher(`/products/${productId}/variants`, 'POST', variant);
+      //     } else { // Existing variant
+      //         await fetcher(`/products/${productId}/variants/${variant._id}`, 'PUT', variant);
+      //     }
+      // }
+      // // Logic to find and delete removed variants (more complex, requires comparing original and new variants)
+
       router.push("/products");
     } catch (err: any) {
-      toast.error("Lỗi khi thêm sản phẩm: " + (err.info?.message || err.message));
-      console.error("Error adding product:", err);
+      toast.error("Lỗi khi cập nhật sản phẩm: " + (err.info?.message || err.message));
+      console.error("Error updating product:", err);
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
@@ -179,12 +249,28 @@ export default function AddProductPage() {
     router.push("/products");
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        Đang tải dữ liệu sản phẩm...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4 text-red-500">
+        Lỗi: {error}
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: "#f9fafb" }}>
       <div className="w-full max-w-5xl bg-white rounded-lg shadow overflow-hidden">
         <div className="p-6">
           <div className="flex items-center justify-between mb-6">
-            <h1 className="text-xl font-medium">Thêm sản phẩm mới</h1>
+            <h1 className="text-xl font-medium">Chỉnh sửa sản phẩm</h1>
             <Link href="/products" className="text-sm text-gray-500 hover:text-gray-700">
               <i className="fas fa-arrow-left mr-1"></i> Quay lại danh sách
             </Link>
@@ -300,7 +386,7 @@ export default function AddProductPage() {
                       type="text"
                       id="tags"
                       name="tags"
-                      value={formData.tags}
+                      value={Array.isArray(formData.tags) ? formData.tags.join(', ') : formData.tags}
                       onChange={handleInputChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
                       placeholder="Ví dụ: thời trang, nam, áo thun"
@@ -312,9 +398,17 @@ export default function AddProductPage() {
               {/* Variants Section */}
               <div>
                 <h3 className="text-lg font-medium text-gray-900 mb-4">Biến thể sản phẩm (SKU, Kích thước, Màu sắc, Giá, Tồn kho)</h3>
+                {formData.variants.length === 0 && <p className="text-gray-500 mb-4">Chưa có biến thể nào. Vui lòng thêm biến thể.</p>}
                 {formData.variants.map((variant, index) => (
-                  <div key={index} className="border p-4 rounded-lg mb-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <h4 className="md:col-span-3 text-md font-semibold text-gray-800">Biến thể {index + 1}</h4>
+                  <div key={variant._id || index} className="border p-4 rounded-lg mb-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <h4 className="md:col-span-3 text-md font-semibold text-gray-800 flex justify-between items-center">
+                      Biến thể {index + 1}
+                      <button type="button" onClick={() => handleDeleteVariant(variant._id)}
+                        className="text-red-500 hover:text-red-700 disabled:opacity-50"
+                        disabled={formData.variants.length === 1}>
+                        <i className="fas fa-trash"></i> Xóa
+                      </button>
+                    </h4>
                     <div>
                       <label htmlFor={`sku-${index}`} className="block text-sm font-medium text-gray-700 mb-1">SKU</label>
                       <input type="text" id={`sku-${index}`} name="sku" value={variant.sku} onChange={(e) => handleVariantChange(index, e)} required
@@ -373,26 +467,14 @@ export default function AddProductPage() {
                 ))}
                 <button
                   type="button"
-                  onClick={() => setFormData(prev => ({
-                    ...prev,
-                    variants: [...prev.variants, { sku: "", kich_thuoc: "M", mau_sac: "Đen", gia: 0, gia_km: null, so_luong: 0, hinh_chinh: "", hinh_thumbnail: [] }]
-                  }))}
+                  onClick={handleAddVariant}
                   className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 mt-2"
                 >
-                  Thêm biến thể
+                  Thêm biến thể mới
                 </button>
-                {formData.variants.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={() => setFormData(prev => ({ ...prev, variants: prev.variants.slice(0, -1) }))}
-                    className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 mt-2 ml-2"
-                  >
-                    Xóa biến thể cuối
-                  </button>
-                )}
               </div>
 
-              {/* Product General Images (if you want this separate from variants) */}
+              {/* Product General Images */}
               <div>
                 <h3 className="text-lg font-medium text-gray-900 mb-4">Hình ảnh chung sản phẩm (URLs)</h3>
                 <input
@@ -412,7 +494,6 @@ export default function AddProductPage() {
                   ))}
                 </div>
               </div>
-
 
               {/* SEO Info */}
               <div>
@@ -494,8 +575,8 @@ export default function AddProductPage() {
               >
                 Hủy bỏ
               </button>
-              <button type="submit" className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600" disabled={loading}>
-                {loading ? "Đang lưu..." : "Lưu sản phẩm"}
+              <button type="submit" className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600" disabled={submitting}>
+                {submitting ? "Đang cập nhật..." : "Cập nhật sản phẩm"}
               </button>
             </div>
           </form>

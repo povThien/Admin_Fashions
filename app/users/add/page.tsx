@@ -1,175 +1,108 @@
 "use client"
 
-import type React from "react"
-
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { addUser } from "@/lib/userService"
+import useAuthGuard from "@/app/hooks/useAuthGuard"
 
 export default function AddUserPage() {
-  const router = useRouter()
+  useAuthGuard();
+  const router = useRouter();
   const [formData, setFormData] = useState({
-    name: "",
+    ho_ten: "",
     email: "",
-    phone: "",
-    role: "",
-    status: "active",
-  })
+    mat_khau: "",
+    so_dien_thoai: "",
+    dia_chi: "",
+    vai_tro: "",
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }))
-  }
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
 
-  const handleStatusChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData((prev) => ({
-      ...prev,
-      status: e.target.value,
-    }))
-  }
+  const handleRoleChange = (value: string) => {
+    setFormData(prev => ({ ...prev, vai_tro: value }));
+  };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    console.log("Form data:", formData)
-    alert("Người dùng đã được thêm thành công!")
-    router.push("/users")
-  }
-
-  const handleCancel = () => {
-    router.push("/users")
-  }
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.mat_khau) {
+      alert("Vui lòng nhập mật khẩu.");
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      const result = await addUser(formData);
+      if (result.success) {
+        alert("Thêm người dùng thành công!");
+        router.push("/users");
+      } else {
+        throw new Error(result.message);
+      }
+    } catch (error: any) {
+      alert(`Thêm người dùng thất bại: ${error.message}`);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: "#f9fafb" }}>
-      <div className="w-full max-w-3xl bg-white rounded-lg shadow overflow-hidden">
-        <div className="p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h1 className="text-xl font-medium">Thêm người dùng mới</h1>
-          </div>
-
-          <form onSubmit={handleSubmit}>
-            <div className="grid grid-cols-1 gap-6">
-              {/* Basic Info */}
-              <div>
-                <h3 className="text-lg font-medium text-gray-900 mb-4">Thông tin cơ bản</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label htmlFor="user-name" className="block text-sm font-medium text-gray-700 mb-1">
-                      Họ và tên
-                    </label>
-                    <input
-                      type="text"
-                      id="user-name"
-                      name="name"
-                      value={formData.name}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
-                      placeholder="Nhập họ và tên"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="user-email" className="block text-sm font-medium text-gray-700 mb-1">
-                      Email
-                    </label>
-                    <input
-                      type="email"
-                      id="user-email"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
-                      placeholder="Nhập email"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="user-phone" className="block text-sm font-medium text-gray-700 mb-1">
-                      Số điện thoại
-                    </label>
-                    <input
-                      type="tel"
-                      id="user-phone"
-                      name="phone"
-                      value={formData.phone}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
-                      placeholder="Nhập số điện thoại"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="user-role" className="block text-sm font-medium text-gray-700 mb-1">
-                      Vai trò
-                    </label>
-                    <select
-                      id="user-role"
-                      name="role"
-                      value={formData.role}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
-                      required
-                    >
-                      <option value="">Chọn vai trò</option>
-                      <option value="admin">Admin</option>
-                      <option value="shipper">Shipper</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              {/* Status */}
-              <div>
-                <h3 className="text-lg font-medium text-gray-900 mb-4">Trạng thái</h3>
-                <div className="flex items-center">
-                  <input
-                    id="active-status"
-                    name="status"
-                    type="radio"
-                    value="active"
-                    checked={formData.status === "active"}
-                    onChange={handleStatusChange}
-                    className="h-4 w-4 text-yellow-500 focus:ring-yellow-500 border-gray-300"
-                  />
-                  <label htmlFor="active-status" className="ml-2 block text-sm text-gray-900">
-                    Hoạt động
-                  </label>
-                </div>
-                <div className="flex items-center mt-2">
-                  <input
-                    id="inactive-status"
-                    name="status"
-                    type="radio"
-                    value="inactive"
-                    checked={formData.status === "inactive"}
-                    onChange={handleStatusChange}
-                    className="h-4 w-4 text-yellow-500 focus:ring-yellow-500 border-gray-300"
-                  />
-                  <label htmlFor="inactive-status" className="ml-2 block text-sm text-gray-900">
-                    Tạm khóa
-                  </label>
-                </div>
-              </div>
-            </div>
-
-            {/* Form Actions */}
-            <div className="flex justify-end space-x-3 mt-8">
-              <button
-                type="button"
-                onClick={handleCancel}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50"
-              >
-                Hủy bỏ
-              </button>
-              <button type="submit" className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600">
-                Lưu người dùng
-              </button>
-            </div>
-          </form>
+    <div className="min-h-screen p-4 bg-gray-50">
+      <div className="w-full max-w-3xl mx-auto bg-white rounded-lg shadow-md">
+        <div className="p-6 border-b">
+          <h1 className="text-xl font-medium">Thêm người dùng mới</h1>
         </div>
+        <form onSubmit={handleSubmit}>
+          <div className="p-6 space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <Label htmlFor="ho_ten">Họ và tên</Label>
+                <Input id="ho_ten" name="ho_ten" value={formData.ho_ten} onChange={handleInputChange} required />
+              </div>
+              <div>
+                <Label htmlFor="email">Email</Label>
+                <Input id="email" name="email" type="email" value={formData.email} onChange={handleInputChange} required />
+              </div>
+              <div>
+                <Label htmlFor="mat_khau">Mật khẩu</Label>
+                <Input id="mat_khau" name="mat_khau" type="password" value={formData.mat_khau} onChange={handleInputChange} required />
+              </div>
+              <div>
+                <Label htmlFor="so_dien_thoai">Số điện thoại</Label>
+                <Input id="so_dien_thoai" name="so_dien_thoai" value={formData.so_dien_thoai} onChange={handleInputChange} />
+              </div>
+              <div className="md:col-span-2">
+                <Label htmlFor="dia_chi">Địa chỉ</Label>
+                <Input id="dia_chi" name="dia_chi" value={formData.dia_chi} onChange={handleInputChange} />
+              </div>
+              <div>
+                <Label htmlFor="vai_tro">Vai trò</Label>
+                <Select name="vai_tro" value={formData.vai_tro} onValueChange={handleRoleChange}>
+                  <SelectTrigger id="vai_tro"><SelectValue placeholder="Chọn vai trò" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="admin">Admin</SelectItem>
+                    <SelectItem value="shipper">Shipper</SelectItem>
+                    <SelectItem value="khach_hang">Khách hàng</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 p-6 border-t bg-gray-50 rounded-b-lg">
+            <Button type="button" variant="outline" onClick={() => router.back()}>Hủy bỏ</Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? 'Đang lưu...' : 'Lưu người dùng'}
+            </Button>
+          </div>
+        </form>
       </div>
     </div>
-  )
+  );
 }

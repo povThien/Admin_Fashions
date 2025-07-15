@@ -1,58 +1,50 @@
 "use client"
 
-import type React from "react"
-
 import { useState } from "react"
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 interface ThaoTacVoucherProps {
   onSearch: (query: string) => void
+  onFilterChange: (filters: { discount_type?: string; status?: string }) => void
   onAddVoucher: () => void
 }
 
-export default function ThaoTacVoucher({ onSearch, onAddVoucher }: ThaoTacVoucherProps) {
-  const [searchQuery, setSearchQuery] = useState("")
-  const [voucherType, setVoucherType] = useState("")
-
-  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const query = e.target.value
-    setSearchQuery(query)
-    onSearch(query)
-  }
-
-  const handleTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setVoucherType(e.target.value)
-  }
-
+export default function ThaoTacVoucher({ onSearch, onFilterChange, onAddVoucher }: ThaoTacVoucherProps) {
   return (
     <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
       <div className="relative w-full md:w-64">
-        <input
+        <Input
           type="text"
-          value={searchQuery}
-          onChange={handleSearch}
-          placeholder="Tìm kiếm voucher..."
-          className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+          onChange={(e) => onSearch(e.target.value)}
+          placeholder="Tìm kiếm mã voucher..."
+          className="pl-10"
         />
         <i className="fas fa-search absolute left-3 top-3 text-gray-400"></i>
       </div>
       <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
-        <select
-          value={voucherType}
-          onChange={handleTypeChange}
-          className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
-        >
-          <option value="">Lọc theo loại</option>
-          <option value="percentage">Giảm theo %</option>
-          <option value="fixed">Giảm trực tiếp</option>
-          <option value="limited">Giảm có giới hạn</option>
-        </select>
-        <button
-          onClick={onAddVoucher}
-          className="bg-primary text-white px-4 py-2 rounded-lg hover:bg-yellow-600 flex items-center justify-center"
-        >
+        <Select onValueChange={(value) => onFilterChange({ discount_type: value === 'all' ? '' : value })}>
+          <SelectTrigger><SelectValue placeholder="Lọc theo loại" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tất cả loại</SelectItem>
+            <SelectItem value="percent">Giảm theo %</SelectItem>
+            <SelectItem value="fixed">Giảm trực tiếp</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select onValueChange={(value) => onFilterChange({ status: value === 'all' ? '' : value })}>
+          <SelectTrigger><SelectValue placeholder="Lọc theo trạng thái" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tất cả trạng thái</SelectItem>
+            <SelectItem value="active">Đang hoạt động</SelectItem>
+            <SelectItem value="inactive">Tạm ẩn</SelectItem>
+            <SelectItem value="expired">Hết hạn</SelectItem>
+          </SelectContent>
+        </Select>
+        <Button onClick={onAddVoucher}>
           <i className="fas fa-plus mr-2"></i>
           Thêm voucher mới
-        </button>
+        </Button>
       </div>
     </div>
   )

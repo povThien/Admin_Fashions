@@ -1,411 +1,145 @@
 "use client"
 
-import type React from "react"
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import useAuthGuard from "@/app/hooks/useAuthGuard"
+import { createOrder } from "@/lib/orderService" // Import hàm API mới
 
-// Interface định nghĩa cấu trúc dữ liệu đơn hàng
-interface OrderItem {
-  id: number
-  name: string
-  code: string
-  price: string
-  quantity: number
-  total: string
-  image?: string
-}
+export default function AddOrderPage() {
+  useAuthGuard();
+  const router = useRouter();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-interface Customer {
-  name: string
-  email: string
-  phone: string
-  address: string
-}
+  // State cho thông tin khách hàng
+  const [customerInfo, setCustomerInfo] = useState({
+    ho_ten: '',
+    email: '',
+    sdt: '',
+    dia_chi_giao_hang: '',
+    ghi_chu: '',
+    phuong_thuc_thanh_toan: 'COD' // SỬA LỖI: Đặt giá trị mặc định là chữ HOA
+  });
 
-interface OrderData {
-  id: string
-  customer: Customer
-  items: OrderItem[]
-  summary: {
-    subtotal: string
-    shipping: string
-    discount: string
-    total: string
-  }
-  status: string
-  orderDate: string
-}
+  // State cho danh sách sản phẩm
+  const [items, setItems] = useState([{ id_variant: '', so_luong: 1 }]);
 
-export default function ChiTietDonHangPage() {
-  const router = useRouter()
+  // Hàm xử lý thay đổi thông tin khách hàng
+  const handleCustomerChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setCustomerInfo(prev => ({ ...prev, [name]: value }));
+  };
 
-  // State quản lý dữ liệu đơn hàng
-  const [orderData, setOrderData] = useState<OrderData | null>(null)
+  // Hàm xử lý thay đổi thông tin sản phẩm
+  const handleItemChange = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    const newItems = [...items];
+    newItems[index] = { ...newItems[index], [name]: value };
+    setItems(newItems);
+  };
 
-  // State quản lý form cập nhật
-  const [newStatus, setNewStatus] = useState("")
-  const [shipperId, setShipperId] = useState("")
+  // Hàm thêm một dòng sản phẩm mới
+  const addItemRow = () => {
+    setItems([...items, { id_variant: '', so_luong: 1 }]);
+  };
 
-  // State quản lý loading
-  const [isLoading, setIsLoading] = useState(true)
+  // Hàm xóa một dòng sản phẩm
+  const removeItemRow = (index: number) => {
+    const newItems = items.filter((_, i) => i !== index);
+    setItems(newItems);
+  };
 
-  // useEffect: Chạy khi component được mount để load dữ liệu
-  useEffect(() => {
-    // Giả lập việc load dữ liệu từ API
-    const loadOrderData = async () => {
-      try {
-        setIsLoading(true)
+  // Hàm xử lý khi submit form
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
 
-        // Giả lập delay API call
-        await new Promise((resolve) => setTimeout(resolve, 1000))
-
-        // Dữ liệu mẫu khớp với HTML template
-        const mockData: OrderData = {
-          id: "#LX-10025",
-          customer: {
-            name: "Nguyễn Văn A",
-            email: "nguyenvana@email.com",
-            phone: "0987654321",
-            address: "123 Đường ABC, Quận 1, TP.HCM",
-          },
-          items: [
-            {
-              id: 1,
-              name: "Áo thun nam cao cấp",
-              code: "SP-001",
-              price: "1.999.999₫",
-              quantity: 2,
-              total: "3.999.998₫",
-            },
-            {
-              id: 2,
-              name: "Quần jean nam",
-              code: "SP-002",
-              price: "2.500.000₫",
-              quantity: 1,
-              total: "2.500.000₫",
-            },
-          ],
-          summary: {
-            subtotal: "6.499.998₫",
-            shipping: "30.000₫",
-            discount: "500.000₫",
-            total: "6.029.998₫",
-          },
-          status: "Chờ xử lý",
-          orderDate: "15/05/2025",
-        }
-
-        setOrderData(mockData)
-      } catch (error) {
-        console.error("Lỗi khi load dữ liệu:", error)
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    loadOrderData()
-  }, [])
-
-  // Hàm xử lý cập nhật trạng thái đơn hàng
-  const handleStatusUpdate = async (e: React.FormEvent) => {
-    e.preventDefault()
+    const orderData = {
+      ...customerInfo,
+      chi_tiet: items.map(item => ({
+        id_variant: item.id_variant,
+        so_luong: Number(item.so_luong)
+      })),
+    };
 
     try {
-      // Giả lập API call cập nhật trạng thái
-      console.log("Cập nhật trạng thái:", newStatus)
-      console.log("ID Shipper:", shipperId)
-
-      // Hiển thị thông báo thành công
-      alert("Đã cập nhật trạng thái đơn hàng thành công!")
-
-      // Reset form
-      setNewStatus("")
-      setShipperId("")
-    } catch (error) {
-      console.error("Lỗi khi cập nhật:", error)
-      alert("Có lỗi xảy ra khi cập nhật!")
+      const result = await createOrder(orderData);
+      if (result.success) {
+        alert('Tạo đơn hàng thành công!');
+        router.push('/orders');
+      } else {
+        throw new Error(result.message || 'Có lỗi xảy ra');
+      }
+    } catch (error: any) {
+      alert(`Tạo đơn hàng thất bại: ${error.message}`);
+    } finally {
+      setIsSubmitting(false);
     }
-  }
-
-  // Hàm xử lý in hóa đơn
-  const handlePrint = () => {
-    // Sử dụng window.print() để in trang hiện tại
-    window.print()
-  }
-
-  // Hàm quay lại trang danh sách đơn hàng
-  const handleGoBack = () => {
-    router.push("/orders")
-  }
-
-  // Hiển thị loading khi đang tải dữ liệu
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-500 mx-auto mb-4"></div>
-          <p className="text-gray-600">Đang tải dữ liệu...</p>
-        </div>
-      </div>
-    )
-  }
-
-  // Hiển thị lỗi nếu không có dữ liệu
-  if (!orderData) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <p className="text-red-600 mb-4">Không thể tải dữ liệu đơn hàng</p>
-          <button onClick={handleGoBack} className="px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600">
-            Quay lại
-          </button>
-        </div>
-      </div>
-    )
-  }
+  };
 
   return (
-    <div className="bg-gray-50 min-h-screen" style={{ fontFamily: "'Poppins', sans-serif" }}>
-      <div className="container mx-auto px-4 py-8">
-        <div className="bg-white rounded-lg shadow-md p-6">
-          {/* HEADER SECTION - Tiêu đề và nút in */}
-          <div className="flex justify-between items-center mb-6">
-            <div className="flex items-center space-x-4">
-              {/* Nút quay lại */}
-              <button
-                onClick={handleGoBack}
-                className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-md"
-                title="Quay lại danh sách đơn hàng"
-              >
-                <i className="fas fa-arrow-left"></i>
-              </button>
-
-              {/* Tiêu đề trang */}
-              <h1 className="text-2xl font-bold">Chi tiết đơn hàng {orderData.id}</h1>
-            </div>
-
-            {/* Nút in hóa đơn */}
-            <button
-              onClick={handlePrint}
-              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
-              title="In hóa đơn"
-            >
-              <i className="fas fa-print mr-2"></i>
-              In hóa đơn
-            </button>
-          </div>
-
-          {/* CUSTOMER INFORMATION SECTION - Thông tin khách hàng */}
-          <div className="mb-8">
-            <h3 className="text-lg font-medium mb-4 pb-2 border-b border-gray-200">Thông tin khách hàng</h3>
-
-            {/* Grid layout 2 cột cho thông tin khách hàng */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Họ tên */}
-              <div>
-                <p className="text-sm text-gray-500 mb-1">Họ tên</p>
-                <p className="font-medium">{orderData.customer.name}</p>
+    <div className="p-4 md:p-8 bg-gray-50 min-h-screen">
+      <form onSubmit={handleSubmit}>
+        <Card className="max-w-4xl mx-auto">
+          <CardHeader>
+            <CardTitle>Tạo đơn hàng thủ công</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-8">
+            {/* Thông tin khách hàng */}
+            <section>
+              <h3 className="text-lg font-semibold mb-4 border-b pb-2">Thông tin khách hàng</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div><Label htmlFor="ho_ten">Họ tên</Label><Input id="ho_ten" name="ho_ten" value={customerInfo.ho_ten} onChange={handleCustomerChange} required /></div>
+                <div><Label htmlFor="email">Email</Label><Input id="email" name="email" type="email" value={customerInfo.email} onChange={handleCustomerChange} required placeholder="Bắt buộc để tìm khách hàng" /></div>
+                <div><Label htmlFor="sdt">Số điện thoại</Label><Input id="sdt" name="sdt" value={customerInfo.sdt} onChange={handleCustomerChange} required /></div>
+                <div><Label htmlFor="dia_chi_giao_hang">Địa chỉ giao hàng</Label><Input id="dia_chi_giao_hang" name="dia_chi_giao_hang" value={customerInfo.dia_chi_giao_hang} onChange={handleCustomerChange} required /></div>
               </div>
+            </section>
 
-              {/* Email */}
-              <div>
-                <p className="text-sm text-gray-500 mb-1">Email</p>
-                <p className="font-medium">{orderData.customer.email}</p>
+            {/* Chi tiết đơn hàng */}
+            <section>
+              <h3 className="text-lg font-semibold mb-4 border-b pb-2">Chi tiết đơn hàng</h3>
+              <div className="space-y-4">
+                {items.map((item, index) => (
+                  <div key={index} className="flex items-end gap-2 p-2 border rounded-md">
+                    <div className="flex-grow"><Label>SKU sản phẩm</Label><Input name="id_variant" value={item.id_variant} onChange={(e) => handleItemChange(index, e)} placeholder="Nhập SKU của biến thể" required /></div>
+                    <div className="w-24"><Label>Số lượng</Label><Input name="so_luong" type="number" min="1" value={item.so_luong} onChange={(e) => handleItemChange(index, e)} required /></div>
+                    <Button type="button" variant="destructive" size="sm" onClick={() => removeItemRow(index)}>Xóa</Button>
+                  </div>
+                ))}
+                <Button type="button" variant="outline" onClick={addItemRow}>+ Thêm sản phẩm</Button>
               </div>
+            </section>
 
-              {/* Số điện thoại */}
-              <div>
-                <p className="text-sm text-gray-500 mb-1">Số điện thoại</p>
-                <p className="font-medium">{orderData.customer.phone}</p>
-              </div>
-
-              {/* Địa chỉ */}
-              <div>
-                <p className="text-sm text-gray-500 mb-1">Địa chỉ</p>
-                <p className="font-medium">{orderData.customer.address}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* ORDER DETAILS SECTION - Chi tiết đơn hàng */}
-          <div className="mb-8">
-            <h3 className="text-lg font-medium mb-4 pb-2 border-b border-gray-200">Chi tiết đơn hàng</h3>
-
-            {/* Bảng sản phẩm với responsive design */}
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                {/* Table Header */}
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Sản phẩm
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Đơn giá
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Số lượng
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Thành tiền
-                    </th>
-                  </tr>
-                </thead>
-
-                {/* Table Body */}
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {orderData.items.map((item) => (
-                    <tr key={item.id} className="hover:bg-gray-50">
-                      {/* Cột sản phẩm với hình ảnh và thông tin */}
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          {/* Placeholder cho hình ảnh sản phẩm */}
-                          <div className="flex-shrink-0 h-10 w-10 bg-gray-200 rounded-md flex items-center justify-center">
-                            <i className="fas fa-image text-gray-400"></i>
-                          </div>
-
-                          {/* Thông tin sản phẩm */}
-                          <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900">{item.name}</div>
-                            <div className="text-sm text-gray-500">Mã: {item.code}</div>
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* Cột đơn giá */}
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.price}</td>
-
-                      {/* Cột số lượng */}
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.quantity}</td>
-
-                      {/* Cột thành tiền */}
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{item.total}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          {/* ORDER SUMMARY SECTION - Tổng kết đơn hàng */}
-          <div className="mb-8">
-            <h3 className="text-lg font-medium mb-4 pb-2 border-b border-gray-200">Tổng kết đơn hàng</h3>
-
-            {/* Các dòng tính toán */}
-            <div className="space-y-3 max-w-md ml-auto">
-              {/* Tạm tính */}
-              <div className="flex justify-between">
-                <span className="font-medium">Tạm tính:</span>
-                <span className="font-medium">{orderData.summary.subtotal}</span>
-              </div>
-
-              {/* Phí vận chuyển */}
-              <div className="flex justify-between">
-                <span className="font-medium">Phí vận chuyển:</span>
-                <span className="font-medium">{orderData.summary.shipping}</span>
-              </div>
-
-              {/* Giảm giá */}
-              <div className="flex justify-between">
-                <span className="font-medium">Giảm giá:</span>
-                <span className="font-medium text-red-600">-{orderData.summary.discount}</span>
-              </div>
-
-              {/* Đường kẻ phân cách */}
-              <div className="border-t border-gray-200 pt-3">
-                <div className="flex justify-between">
-                  <span className="text-lg font-bold">Tổng cộng:</span>
-                  <span className="text-lg font-bold text-yellow-600">{orderData.summary.total}</span>
+            {/* Thông tin khác */}
+            <section>
+              <h3 className="text-lg font-semibold mb-4 border-b pb-2">Thông tin khác</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label>Phương thức thanh toán</Label>
+                  <Select name="phuong_thuc_thanh_toan" value={customerInfo.phuong_thuc_thanh_toan} onValueChange={(value) => setCustomerInfo(p => ({ ...p, phuong_thuc_thanh_toan: value }))}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {/* SỬA LỖI: Chuyển value sang chữ HOA để khớp với enum của backend */}
+                      <SelectItem value="COD">Thanh toán khi nhận hàng (COD)</SelectItem>
+                      <SelectItem value="VNPay">Thanh toán qua VNPay</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
+                <div><Label htmlFor="ghi_chu">Ghi chú</Label><Input id="ghi_chu" name="ghi_chu" value={customerInfo.ghi_chu} onChange={handleCustomerChange} /></div>
               </div>
-            </div>
-          </div>
-
-          {/* ORDER STATUS SECTION - Trạng thái đơn hàng */}
-          <div className="mb-8">
-            <h3 className="text-lg font-medium mb-4 pb-2 border-b border-gray-200">Trạng thái đơn hàng</h3>
-
-            {/* Grid layout cho trạng thái */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Trạng thái hiện tại */}
-              <div>
-                <p className="text-sm text-gray-500 mb-1">Trạng thái hiện tại</p>
-                <div className="inline-block px-3 py-1 bg-yellow-100 text-yellow-800 rounded-md font-medium">
-                  {orderData.status}
-                </div>
-              </div>
-
-              {/* Ngày đặt hàng */}
-              <div>
-                <p className="text-sm text-gray-500 mb-1">Ngày đặt hàng</p>
-                <p className="font-medium">{orderData.orderDate}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* UPDATE FORM SECTION - Form cập nhật đơn hàng */}
-          <div className="border-t border-gray-200 pt-6">
-            <h3 className="text-lg font-medium mb-4">Cập nhật đơn hàng</h3>
-
-            <form onSubmit={handleStatusUpdate} className="space-y-4">
-              {/* Dropdown cập nhật trạng thái */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Cập nhật trạng thái</label>
-                <select
-                  value={newStatus}
-                  onChange={(e) => setNewStatus(e.target.value)}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
-                  required
-                >
-                  <option value="">Chọn trạng thái mới</option>
-                  <option value="processing">Đang xử lý</option>
-                  <option value="preparing">Đang chuẩn bị</option>
-                  <option value="shipping">Đang giao hàng</option>
-                  <option value="delivered">Đã giao hàng</option>
-                  <option value="completed">Đã hoàn thành</option>
-                  <option value="cancelled">Đã hủy</option>
-                </select>
-              </div>
-
-              {/* Input ID Shipper */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">ID Shipper (nếu có)</label>
-                <input
-                  type="text"
-                  value={shipperId}
-                  onChange={(e) => setShipperId(e.target.value)}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
-                  placeholder="Nhập ID shipper"
-                />
-              </div>
-
-              {/* Buttons */}
-              <div className="flex justify-end space-x-3 pt-4">
-                {/* Nút Hủy */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setNewStatus("")
-                    setShipperId("")
-                  }}
-                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
-                >
-                  Hủy
-                </button>
-
-                {/* Nút Lưu thay đổi */}
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 transition-colors"
-                >
-                  Lưu thay đổi
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      </div>
+            </section>
+          </CardContent>
+          <CardFooter className="flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={() => router.back()}>Hủy</Button>
+            <Button type="submit" disabled={isSubmitting}>{isSubmitting ? 'Đang tạo...' : 'Tạo đơn hàng'}</Button>
+          </CardFooter>
+        </Card>
+      </form>
     </div>
-  )
+  );
 }

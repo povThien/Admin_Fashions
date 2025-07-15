@@ -2,26 +2,35 @@ import { Card, CardContent } from "@/components/ui/card"
 import NhanTrangThai from "@/components/ui/nhan-trang-thai"
 import NutThaoTac from "@/components/ui/nut-thao-tac"
 import PhanTrang from "@/components/ui/phan-trang"
+import { formatCurrency, fetcher } from "@/lib/api" // Import formatCurrency và fetcher
+import { toast } from "react-hot-toast"
+import { useRouter } from "next/navigation"
 
 interface Product {
-  id: string
-  name: string
-  code: string
-  category: string
-  price: string
-  stock: number
-  status: string
-  image: string
-  brand?: string
+  _id: string;
+  id: number;
+  ten_sp: string;
+  id_loai: { id: number; ten_loai: string };
+  id_thuong_hieu: { id: number; ten_thuong_hieu: string } | null;
+  variants: {
+    sku: string;
+    gia: number;
+    gia_km: number | null;
+    so_luong: number;
+    hinh_chinh: string; // Sử dụng hinh_chinh của variant
+  }[];
+  an_hien: boolean; // an_hien (true/false)
+  // Các trường khác có thể thêm vào nếu cần hiển thị
 }
 
 interface BangSanPhamProps {
-  products: Product[]
-  currentPage: number
-  totalPages: number
-  totalItems: number
-  itemsPerPage: number
-  onPageChange: (page: number) => void
+  products: Product[];
+  currentPage: number;
+  totalPages: number;
+  totalItems: number;
+  itemsPerPage: number;
+  onPageChange: (page: number) => void;
+  onDeleteSuccess: () => void; // Callback để refetch dữ liệu sau khi xóa
 }
 
 export default function BangSanPham({
@@ -31,27 +40,38 @@ export default function BangSanPham({
   totalItems,
   itemsPerPage,
   onPageChange,
+  onDeleteSuccess,
 }: BangSanPhamProps) {
-  // Hàm xử lý các thao tác trên sản phẩm
-  const handleView = (productId: string) => {
-    console.log("Xem chi tiết sản phẩm:", productId)
-    // TODO: Chuyển hướng đến trang chi tiết sản phẩm
-  }
+  const router = useRouter();
 
-  const handleEdit = (productId: string) => {
-    console.log("Chỉnh sửa sản phẩm:", productId)
-    // TODO: Chuyển hướng đến trang chỉnh sửa sản phẩm
-  }
+  const handleView = (productId: number) => {
+    // Để xem chi tiết sản phẩm, bạn có thể tạo một trang riêng hoặc modal
+    console.log("Xem chi tiết sản phẩm:", productId);
+    // Ví dụ: router.push(`/products/${productId}`);
+    toast.info("Chức năng xem chi tiết sẽ được phát triển sau.");
+  };
 
-  const handleDelete = (productId: string) => {
-    console.log("Xóa sản phẩm:", productId)
-    // TODO: Hiển thị modal xác nhận xóa
-  }
+  const handleEdit = (productId: number) => {
+    console.log("Chỉnh sửa sản phẩm:", productId);
+    router.push(`/products/${productId}/edit`);
+  };
+
+  const handleDelete = async (productId: number) => {
+    if (window.confirm(`Bạn có chắc chắn muốn xóa sản phẩm có ID: ${productId} này không?`)) {
+      try {
+        await fetcher(`/products/${productId}`, 'DELETE');
+        toast.success("Sản phẩm đã được xóa thành công!");
+        onDeleteSuccess(); // Gọi lại hàm refetch dữ liệu
+      } catch (err: any) {
+        toast.error("Lỗi khi xóa sản phẩm: " + (err.info?.message || err.message));
+        console.error("Error deleting product:", err);
+      }
+    }
+  };
 
   return (
     <Card>
       <CardContent className="p-0">
-        {/* Kiểm tra nếu không có sản phẩm nào */}
         {products.length === 0 ? (
           <div className="text-center py-12">
             <div className="text-gray-400 mb-4">
@@ -62,7 +82,6 @@ export default function BangSanPham({
           </div>
         ) : (
           <>
-            {/* Bảng hiển thị sản phẩm */}
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
@@ -106,96 +125,94 @@ export default function BangSanPham({
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {products.map((product, index) => (
-                    <tr
-                      key={product.id}
-                      className={`hover:bg-gray-50 transition-colors ${index % 2 === 0 ? "bg-white" : "bg-gray-25"}`}
-                    >
-                      {/* Cột thông tin sản phẩm */}
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          {/* Hình ảnh sản phẩm */}
-                          <div className="flex-shrink-0 h-12 w-12 bg-gray-100 rounded-lg overflow-hidden border">
-                            <img
-                              src={product.image || "/placeholder.svg"}
-                              alt={product.name}
-                              className="h-full w-full object-cover"
-                              onError={(e) => {
-                                // Xử lý khi không load được ảnh
-                                e.currentTarget.src = "/placeholder.svg?height=48&width=48"
-                              }}
-                            />
-                          </div>
-                          {/* Thông tin sản phẩm */}
-                          <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900 line-clamp-2">{product.name}</div>
-                            <div className="text-xs text-gray-500 flex items-center gap-2">
-                              <span>Mã: {product.code}</span>
-                              {product.brand && (
-                                <>
-                                  <span>•</span>
-                                  <span>{product.brand}</span>
-                                </>
-                              )}
+                  {products.map((product, index) => {
+                    // Tính tổng số lượng tồn kho và giá thấp nhất từ các biến thể
+                    const totalStock = product.variants.reduce((sum, v) => sum + v.so_luong, 0);
+                    const minPrice = product.variants.length > 0
+                      ? Math.min(...product.variants.map(v => v.gia_km !== null && v.gia_km > 0 ? v.gia_km : v.gia))
+                      : 0;
+                    const displayPrice = formatCurrency(minPrice);
+                    const mainImage = product.variants[0]?.hinh_chinh || product.hinh_anh?.[0] || "/placeholder.svg";
+
+                    return (
+                      <tr
+                        key={product.id}
+                        className={`hover:bg-gray-50 transition-colors ${index % 2 === 0 ? "bg-white" : "bg-gray-25"}`}
+                      >
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <div className="flex-shrink-0 h-12 w-12 bg-gray-100 rounded-lg overflow-hidden border">
+                              <img
+                                src={mainImage}
+                                alt={product.ten_sp}
+                                className="h-full w-full object-cover"
+                                onError={(e) => {
+                                  e.currentTarget.src = "/placeholder.svg";
+                                }}
+                              />
+                            </div>
+                            <div className="ml-4">
+                              <div className="text-sm font-medium text-gray-900 line-clamp-2">{product.ten_sp}</div>
+                              <div className="text-xs text-gray-500 flex items-center gap-2">
+                                <span>ID: {product.id}</span> {/* Sử dụng ID từ backend */}
+                                {product.id_thuong_hieu && product.id_thuong_hieu.ten_thuong_hieu && (
+                                  <>
+                                    <span>•</span>
+                                    <span>{product.id_thuong_hieu.ten_thuong_hieu}</span>
+                                  </>
+                                )}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </td>
+                        </td>
 
-                      {/* Cột danh mục */}
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                          {product.category}
-                        </span>
-                      </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                            {product.id_loai ? product.id_loai.ten_loai : "N/A"}
+                          </span>
+                        </td>
 
-                      {/* Cột giá */}
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{product.price}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{displayPrice}</td>
 
-                      {/* Cột tồn kho */}
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        <div className="flex items-center gap-2">
-                          <span
-                            className={`font-medium ${
-                              product.stock === 0
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={`font-medium ${totalStock === 0
                                 ? "text-red-600"
-                                : product.stock <= 10
+                                : totalStock <= 10
                                   ? "text-yellow-600"
                                   : "text-green-600"
-                            }`}
-                          >
-                            {product.stock}
-                          </span>
-                          {/* Icon trạng thái tồn kho */}
-                          {product.stock === 0 && (
-                            <i className="fas fa-exclamation-triangle text-red-500 text-xs" title="Hết hàng"></i>
-                          )}
-                          {product.stock > 0 && product.stock <= 10 && (
-                            <i className="fas fa-exclamation-circle text-yellow-500 text-xs" title="Sắp hết hàng"></i>
-                          )}
-                        </div>
-                      </td>
+                                }`}
+                            >
+                              {totalStock}
+                            </span>
+                            {totalStock === 0 && (
+                              <i className="fas fa-exclamation-triangle text-red-500 text-xs" title="Hết hàng"></i>
+                            )}
+                            {totalStock > 0 && totalStock <= 10 && (
+                              <i className="fas fa-exclamation-circle text-yellow-500 text-xs" title="Sắp hết hàng"></i>
+                            )}
+                          </div>
+                        </td>
 
-                      {/* Cột trạng thái */}
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <NhanTrangThai status={product.status} />
-                      </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <NhanTrangThai status={product.an_hien ? "active" : "inactive"} />
+                        </td>
 
-                      {/* Cột thao tác */}
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <NutThaoTac
-                          onView={() => handleView(product.id)}
-                          onEdit={() => handleEdit(product.id)}
-                          onDelete={() => handleDelete(product.id)}
-                        />
-                      </td>
-                    </tr>
-                  ))}
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <NutThaoTac
+                            onView={() => handleView(product.id)}
+                            onEdit={() => handleEdit(product.id)}
+                            onDelete={() => handleDelete(product.id)}
+                          />
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
 
-            {/* Component phân trang */}
             <PhanTrang
               currentPage={currentPage}
               totalPages={totalPages}
@@ -207,5 +224,5 @@ export default function BangSanPham({
         )}
       </CardContent>
     </Card>
-  )
+  );
 }

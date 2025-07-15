@@ -22,7 +22,7 @@ export default function OrdersPage() {
   // THÊM MỚI: State cho các tham số truy vấn (filters, search, pagination)
   const [queryParams, setQueryParams] = useState({
     page: 1,
-    limit: 10,
+    limit: 7,
     search: '',
     trang_thai_don_hang: '',
   });
