@@ -2,36 +2,55 @@
 
 import Link from "next/link"
 import ThanhTimKiem from "@/components/ui/thanh-tim-kiem"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Button } from "@/components/ui/button"
 
 interface ThaoTacDonHangProps {
   onSearch: (query: string) => void
   onStatusFilter: (status: string) => void
+  onDateFilter: (dateRange: string) => void // THÊM MỚI: Prop để xử lý lọc theo ngày
 }
 
-export default function ThaoTacDonHang({ onSearch, onStatusFilter }: ThaoTacDonHangProps) {
+export default function ThaoTacDonHang({ onSearch, onStatusFilter, onDateFilter }: ThaoTacDonHangProps) {
   return (
     <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-      <ThanhTimKiem placeholder="Tìm kiếm đơn hàng..." />
+      {/* Cập nhật để truyền prop onSearch */}
+      <ThanhTimKiem
+        placeholder="Tìm theo mã ĐH, email, SĐT..."
+        onSearch={onSearch}
+      />
 
-      <div className="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-2 w-full md:w-auto">
-        <select
-          className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
-          onChange={(e) => onStatusFilter(e.target.value)}
-        >
-          <option value="all">Lọc theo trạng thái</option>
-          <option value="pending">Chờ xử lý</option>
-          <option value="processing">Đang xử lý</option>
-          <option value="delivered">Đã giao hàng</option>
-          <option value="completed">Đã nhận</option>
-          <option value="cancelled">Đã hủy</option>
-        </select>
+      <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+        {/* Lọc theo trạng thái */}
+        <Select onValueChange={(value) => onStatusFilter(value === 'all' ? '' : value)}>
+          <SelectTrigger className="w-full md:w-[180px]">
+            <SelectValue placeholder="Lọc theo trạng thái" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tất cả trạng thái</SelectItem>
+            <SelectItem value="Chờ xác nhận">Chờ xác nhận</SelectItem>
+            <SelectItem value="Đã xác nhận">Đã xác nhận</SelectItem>
+            <SelectItem value="Shipper đã nhận hàng">Shipper đã nhận</SelectItem>
+            {/* <SelectItem value="Đang giao hàng">Đang giao hàng</SelectItem> */}
+            {/* <SelectItem value="Giao hàng thành công">Giao thành công</SelectItem> */}
+            <SelectItem value="Hủy đơn hàng">Đã hủy</SelectItem>
+          </SelectContent>
+        </Select>
 
-        <select className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary">
-          <option>7 ngày gần đây</option>
-          <option>30 ngày gần đây</option>
-          <option>90 ngày gần đây</option>
-          <option>Năm nay</option>
-        </select>
+        {/* THÊM MỚI: Lọc theo ngày */}
+        <Select onValueChange={(value) => onDateFilter(value === 'all' ? '' : value)}>
+          <SelectTrigger className="w-full md:w-[180px]">
+            <SelectValue placeholder="Lọc theo ngày" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tất cả ngày</SelectItem>
+            <SelectItem value="today">Hôm nay</SelectItem>
+            <SelectItem value="last7days">7 ngày qua</SelectItem>
+            <SelectItem value="last30days">30 ngày qua</SelectItem>
+            <SelectItem value="last90days">90 ngày qua</SelectItem>
+            <SelectItem value="last1year">1 năm qua</SelectItem>
+          </SelectContent>
+        </Select>
 
         <Link
           href="/orders/add"

@@ -8,6 +8,7 @@ interface NhanTrangThaiProps {
 export default function NhanTrangThai({ status, customLabel }: NhanTrangThaiProps) {
   let bgColor = "bg-gray-100"
   let textColor = "text-gray-800"
+
   let label = customLabel || status
 
   switch (status) {
@@ -22,13 +23,15 @@ export default function NhanTrangThai({ status, customLabel }: NhanTrangThaiProp
       label = customLabel || "Không hoạt động"
       break
     case "pending":
-      bgColor = "bg-blue-100"
-      textColor = "text-blue-800"
+      bgColor = "bg-yellow-200"
+      textColor = "text-yellow-950"
       label = customLabel || "Đang chờ"
+
+
       break
     case "expired":
       bgColor = "bg-red-100"
-      textColor = "text-red-800"
+      textColor = "text-red-950"
       label = customLabel || "Hết hạn"
       break
   }
