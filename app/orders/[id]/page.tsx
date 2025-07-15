@@ -52,17 +52,19 @@ export default function OrderDetailPage() {
         fetchData();
     }, [fetchData]);
 
+    // Logic để xác định các trạng thái tiếp theo mà Admin có thể chọn
     const getNextAvailableStatuses = (currentStatus: string): string[] => {
         const statusFlow: { [key: string]: string[] } = {
             'Chờ xác nhận': ['Đã xác nhận', 'Hủy đơn hàng'],
             'Đã xác nhận': ['Shipper đã nhận hàng', 'Hủy đơn hàng'],
-            // SỬA LỖI: Khi shipper đã nhận, admin chỉ có thể hủy đơn
+            // YÊU CẦU: Khi shipper đã nhận, admin chỉ có thể hủy đơn
             'Shipper đã nhận hàng': ['Hủy đơn hàng'],
             'Đang giao hàng': ['Giao hàng thành công', 'Giao hàng thất bại', 'Hủy đơn hàng'],
         };
         return statusFlow[currentStatus] || [];
     };
 
+    // Hàm xử lý khi nhấn nút "Lưu thay đổi"
     const handleUpdate = async () => {
         if (!selectedStatus || selectedStatus === order.trang_thai_don_hang) {
             alert("Vui lòng chọn một trạng thái mới để cập nhật.");
@@ -87,7 +89,7 @@ export default function OrderDetailPage() {
             if (res.success) {
                 alert("Cập nhật thành công!");
 
-                // Tự động chuyển trang sau khi cập nhật các trạng thái quan trọng
+                // YÊU CẦU: Tự động chuyển trang sau khi cập nhật các trạng thái quan trọng
                 if (selectedStatus === 'Shipper đã nhận hàng' || selectedStatus === 'Hủy đơn hàng') {
                     router.push('/orders');
                 } else {
