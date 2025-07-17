@@ -64,6 +64,7 @@ export default function ThanhBen({ onClose }: ThanhBenProps) {
         <div>
           {
             customer &&
+            // src={customer.hinh || "/placeholder.svg"}
             <p className="font-medium">{customer.ho_ten}</p>
           }
           <p className="text-xs text-gray-500">Super Admin</p>
