@@ -2,11 +2,12 @@
 
 import type React from "react"
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useState, useEffect } from "react"
+import { useRouter, useParams } from "next/navigation"
 
-export default function AddProductPage() {
+export default function EditProductPage() {
   const router = useRouter()
+  const params = useParams()
   const [formData, setFormData] = useState({
     name: "",
     category: "",
@@ -15,6 +16,18 @@ export default function AddProductPage() {
     status: "active",
   })
   const [imagePreview, setImagePreview] = useState<string | null>(null)
+
+  useEffect(() => {
+    // Mock data loading
+    setFormData({
+      name: "Đồng hồ Chronograph",
+      category: "watches",
+      price: "11599000",
+      description: "Đồng hồ cao cấp với thiết kế sang trọng",
+      status: "active",
+    })
+    setImagePreview("/placeholder.svg?height=200&width=300")
+  }, [params.id])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target
@@ -45,7 +58,7 @@ export default function AddProductPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     console.log("Form data:", formData)
-    alert("Sản phẩm đã được lưu thành công!")
+    alert("Sản phẩm đã được cập nhật thành công!")
     router.push("/products")
   }
 
@@ -58,7 +71,7 @@ export default function AddProductPage() {
       <div className="w-full max-w-3xl bg-white rounded-lg shadow overflow-hidden">
         <div className="p-6">
           <div className="flex items-center justify-between mb-6">
-            <h1 className="text-xl font-medium">Thêm sản phẩm mới</h1>
+            <h1 className="text-xl font-medium">Chỉnh sửa sản phẩm</h1>
           </div>
 
           <form onSubmit={handleSubmit}>
@@ -213,7 +226,7 @@ export default function AddProductPage() {
                 Hủy bỏ
               </button>
               <button type="submit" className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600">
-                Lưu sản phẩm
+                Cập nhật sản phẩm
               </button>
             </div>
           </form>

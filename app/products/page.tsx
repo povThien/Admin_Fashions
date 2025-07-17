@@ -1,280 +1,288 @@
 "use client"
 
-import { useState, useEffect, useMemo, useCallback } from "react"
+import { useState, useMemo } from "react"
 import BoCucAdmin from "@/components/layout/bo-cuc-admin"
 import ThaoTacSanPham from "@/components/san-pham/thao-tac-san-pham"
 import BangSanPham from "@/components/san-pham/bang-san-pham"
 import LocNangCao from "@/components/san-pham/loc-nang-cao"
-import { fetcher, formatCurrency } from "@/lib/api" // Import fetcher và formatCurrency
-import { toast } from "react-hot-toast" // Có thể cần cài đặt: npm install react-hot-toast
 
-// Định nghĩa interface Product chính xác hơn theo backend
-interface Product {
-  _id: string; // ObjectId của MongoDB
-  id: number; // ID tự tăng
-  ten_sp: string;
-  slug: string;
-  id_loai: { id: number; ten_loai: string }; // Populated category
-  id_thuong_hieu: { id: number; ten_thuong_hieu: string } | null; // Populated brand
-  mo_ta: string;
-  chat_lieu: string;
-  xuat_xu: string;
-  variants: Variant[];
-  hinh_anh?: string[]; // Mảng URL hình ảnh chung cho sản phẩm
-  hot: boolean;
-  an_hien: boolean;
-  luot_xem: number;
-  tags?: string[];
-  meta_title?: string;
-  meta_description?: string;
-  meta_keywords?: string;
-  created_at: string;
-  updated_at: string;
-}
-
-interface Variant {
-  _id: string;
-  sku: string;
-  kich_thuoc: string;
-  mau_sac: string;
-  gia: number;
-  gia_km: number | null;
-  phan_tram_km: number;
-  so_luong: number;
-  so_luong_da_ban: number;
-  hinh_chinh: string;
-  hinh_thumbnail: string[];
-}
+// Dữ liệu mẫu sản phẩm - mở rộng để test phân trang
+const mockProducts = [
+  {
+    id: "1",
+    name: "Đồng hồ Chronograph LUXE",
+    code: "SP-001",
+    category: "Đồng hồ",
+    price: "11.599.000₫",
+    priceNumber: 11599000, // Thêm giá dạng số để lọc
+    stock: 25,
+    status: "active",
+    image: "/placeholder.svg?height=64&width=64",
+    brand: "LUXE",
+    createdDate: "2024-01-15",
+  },
+  {
+    id: "2",
+    name: "Túi da cao cấp",
+    code: "SP-002",
+    category: "Túi xách",
+    price: "3.500.000₫",
+    priceNumber: 3500000,
+    stock: 15,
+    status: "active",
+    image: "/placeholder.svg?height=64&width=64",
+    brand: "LUXE",
+    createdDate: "2024-01-20",
+  },
+  {
+    id: "3",
+    name: "Áo thun nam cao cấp",
+    code: "SP-003",
+    category: "Quần áo",
+    price: "1.999.999₫",
+    priceNumber: 1999999,
+    stock: 50,
+    status: "active",
+    image: "/placeholder.svg?height=64&width=64",
+    brand: "Fashion",
+    createdDate: "2024-02-01",
+  },
+  {
+    id: "4",
+    name: "Quần jean nam",
+    code: "SP-004",
+    category: "Quần áo",
+    price: "2.500.000₫",
+    priceNumber: 2500000,
+    stock: 30,
+    status: "active",
+    image: "/placeholder.svg?height=64&width=64",
+    brand: "Denim",
+    createdDate: "2024-02-05",
+  },
+  {
+    id: "5",
+    name: "Kính mát thời trang",
+    code: "SP-005",
+    category: "Phụ kiện",
+    price: "1.200.000₫",
+    priceNumber: 1200000,
+    stock: 0,
+    status: "inactive",
+    image: "/placeholder.svg?height=64&width=64",
+    brand: "Sunglasses",
+    createdDate: "2024-02-10",
+  },
+  // Thêm nhiều sản phẩm để test phân trang
+  {
+    id: "6",
+    name: "Giày thể thao nam",
+    code: "SP-006",
+    category: "Giày dép",
+    price: "3.200.000₫",
+    priceNumber: 3200000,
+    stock: 20,
+    status: "active",
+    image: "/placeholder.svg?height=64&width=64",
+    brand: "Sport",
+    createdDate: "2024-02-15",
+  },
+  {
+    id: "7",
+    name: "Ví da nam cao cấp",
+    code: "SP-007",
+    category: "Phụ kiện",
+    price: "800.000₫",
+    priceNumber: 800000,
+    stock: 35,
+    status: "active",
+    image: "/placeholder.svg?height=64&width=64",
+    brand: "Leather",
+    createdDate: "2024-02-20",
+  },
+  {
+    id: "8",
+    name: "Áo sơ mi công sở",
+    code: "SP-008",
+    category: "Quần áo",
+    price: "1.500.000₫",
+    priceNumber: 1500000,
+    stock: 40,
+    status: "active",
+    image: "/placeholder.svg?height=64&width=64",
+    brand: "Office",
+    createdDate: "2024-02-25",
+  },
+]
 
 // Interface cho bộ lọc nâng cao
 interface AdvancedFilter {
-  category: string; // id_loai
-  brand: string; // id_thuong_hieu
+  category: string
+  brand: string
   priceRange: {
-    min: number;
-    max: number;
-  };
-  stockStatus: string; // "in-stock", "out-of-stock", "low-stock"
-  status: string; // an_hien: "active", "inactive"
+    min: number
+    max: number
+  }
+  stockStatus: string
+  status: string
 }
-
-// Interface cho Category/Brand data from API
-interface Category {
-  id: number;
-  ten_loai: string;
-}
-
-interface Brand {
-  id: number;
-  ten_thuong_hieu: string;
-}
-
 
 export default function ProductsPage() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  // State cho từ khóa tìm kiếm
+  const [searchQuery, setSearchQuery] = useState("")
 
-  const [searchQuery, setSearchQuery] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10); // Lấy từ API, hoặc giữ nguyên
-  const [totalItems, setTotalItems] = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
+  // State cho trang hiện tại
+  const [currentPage, setCurrentPage] = useState(1)
 
-  const [showAdvancedFilter, setShowAdvancedFilter] = useState(false);
+  // Số sản phẩm trên mỗi trang
+  const itemsPerPage = 5
+
+  // State cho việc hiển thị bộ lọc nâng cao
+  const [showAdvancedFilter, setShowAdvancedFilter] = useState(false)
+
+  // State cho bộ lọc nâng cao
   const [advancedFilter, setAdvancedFilter] = useState<AdvancedFilter>({
     category: "",
     brand: "",
     priceRange: {
       min: 0,
-      max: 2000000000, // Max price, adjust as needed
+      max: 20000000, // 20 triệu VND
     },
     stockStatus: "",
     status: "",
-  });
+  })
 
-  const [categoriesList, setCategoriesList] = useState<Category[]>([]);
-  const [brandsList, setBrandsList] = useState<Brand[]>([]);//
-
-  // Fetch categories and brands for filter dropdowns
-  useEffect(() => {
-    const fetchFilterOptions = async () => {
-      try {
-        const categoriesData = await fetcher<Category[]>('/categories/all'); // API lấy tất cả danh mục
-        setCategoriesList(categoriesData.data); // Adjust based on your API response structure
-
-        const brandsData = await fetcher<Brand[]>('/brands/all'); // Assuming you have a /brands/all endpoint
-        setBrandsList(brandsData.data); // Adjust based on your API response structure
-      } catch (err: any) {
-        toast.error("Không thể tải danh mục hoặc thương hiệu: " + (err.info?.message || err.message));
-        console.error("Error fetching filter options:", err);
-      }
-    };
-    fetchFilterOptions();
-  }, []);
-
-  // Fetch products based on filters and pagination
-  const fetchProducts = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      let url = `/products?page=${currentPage}&limit=${itemsPerPage}`;
-      if (searchQuery) {
-        url += `&search=${encodeURIComponent(searchQuery)}`;
-      }
-      if (advancedFilter.category) {
-        // Cần chuyển category name thành id để gửi lên backend
-        const selectedCategory = categoriesList.find(cat => cat.ten_loai === advancedFilter.category);
-        if (selectedCategory) {
-          url += `&id_loai=${selectedCategory.id}`;
-        }
-      }
-      if (advancedFilter.brand) {
-        // Cần chuyển brand name thành id để gửi lên backend
-        const selectedBrand = brandsList.find(brand => brand.ten_thuong_hieu === advancedFilter.brand);
-        if (selectedBrand) {
-          url += `&id_thuong_hieu=${selectedBrand.id}`;
-        }
-      }
-      if (advancedFilter.status) {
-        url += `&an_hien=${advancedFilter.status === 'active' ? 'true' : 'false'}`;
-      }
-      if (advancedFilter.stockStatus) {
-        // Backend không có lọc trực tiếp 'in-stock', 'out-of-stock', 'low-stock'.
-        // Bạn sẽ cần điều chỉnh backend để hỗ trợ hoặc lọc ở frontend.
-        // Tạm thời bỏ qua lọc này hoặc giả định backend sẽ hiểu.
-        // Hoặc bạn có thể tự lọc lại dữ liệu ở frontend sau khi fetch.
-      }
-      // Khoảng giá cũng cần được xử lý ở backend nếu muốn hiệu quả
-      // url += `&min_price=${advancedFilter.priceRange.min}&max_price=${advancedFilter.priceRange.max}`;
-      // Nếu backend chưa hỗ trợ lọc theo giá, bạn sẽ cần lọc lại ở frontend.
-
-      const data = await fetcher<{ data: Product[]; pagination: any }>(url);
-
-      let fetchedProducts = data.data;
-
-      // Filter by price range and stock status in frontend if backend doesn't support
-      fetchedProducts = fetchedProducts.filter(product => {
-        // Calculate total stock and min/max price from variants
-        const totalStock = product.variants.reduce((sum, variant) => sum + variant.so_luong, 0);
-        const minPrice = product.variants.length > 0
-          ? Math.min(...product.variants.map(v => v.gia_km !== null && v.gia_km > 0 ? v.gia_km : v.gia))
-          : 0;
-
-        const matchesPrice = minPrice >= advancedFilter.priceRange.min && minPrice <= advancedFilter.priceRange.max;
-
-        let matchesStockStatus = true;
-        if (advancedFilter.stockStatus === "in-stock") {
-          matchesStockStatus = totalStock > 0;
-        } else if (advancedFilter.stockStatus === "out-of-stock") {
-          matchesStockStatus = totalStock === 0;
-        } else if (advancedFilter.stockStatus === "low-stock") {
-          matchesStockStatus = totalStock > 0 && totalStock <= 10;
-        }
-
-        return matchesPrice && matchesStockStatus;
-      });
-
-
-      setProducts(fetchedProducts);
-      setTotalItems(data.pagination.totalItems);
-      setTotalPages(data.pagination.totalPages);
-    } catch (err: any) {
-      setError(err.info?.message || err.message || 'Lỗi khi tải sản phẩm.');
-      toast.error("Lỗi khi tải sản phẩm: " + (err.info?.message || err.message));
-      console.error("Error fetching products:", err);
-    } finally {
-      setLoading(false);
-    }
-  }, [currentPage, itemsPerPage, searchQuery, advancedFilter, categoriesList, brandsList]);
-
-  useEffect(() => {
-    fetchProducts();
-  }, [fetchProducts]);
-
+  // Hàm xử lý tìm kiếm - được gọi khi người dùng nhập từ khóa
   const handleSearch = (query: string) => {
-    setSearchQuery(query);
-    setCurrentPage(1); // Reset về trang đầu khi tìm kiếm
-  };
+    setSearchQuery(query) // Cập nhật từ khóa tìm kiếm
+    setCurrentPage(1) // Reset về trang đầu khi tìm kiếm
+  }
 
+  // Hàm xử lý thay đổi trang
   const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-  };
+    setCurrentPage(page)
+  }
 
+  // Hàm xử lý cập nhật bộ lọc nâng cao
   const handleAdvancedFilterChange = (newFilter: Partial<AdvancedFilter>) => {
     setAdvancedFilter((prev) => ({
-      ...prev,
-      ...newFilter,
-    }));
-    setCurrentPage(1); // Reset về trang đầu khi lọc
-  };
+      ...prev, // Giữ nguyên các giá trị cũ
+      ...newFilter, // Cập nhật các giá trị mới
+    }))
+    setCurrentPage(1) // Reset về trang đầu khi lọc
+  }
 
+  // Hàm reset tất cả bộ lọc
   const handleResetFilters = () => {
-    setSearchQuery("");
+    setSearchQuery("")
     setAdvancedFilter({
       category: "",
       brand: "",
       priceRange: {
         min: 0,
-        max: 2000000000,
+        max: 20000000,
       },
       stockStatus: "",
       status: "",
-    });
-    setCurrentPage(1);
-  };
+    })
+    setCurrentPage(1)
+  }
 
-  // Tính toán dữ liệu cho phân trang (đã được backend xử lý phần lớn)
-  // useMemo này giờ chỉ còn tác dụng nếu có lọc frontend bổ sung
+  // useMemo để tối ưu hiệu suất - chỉ tính toán lại khi dependencies thay đổi
+  const filteredProducts = useMemo(() => {
+    let result = [...mockProducts] // Tạo bản copy để không thay đổi dữ liệu gốc
+
+    // Bước 1: Lọc theo từ khóa tìm kiếm
+    if (searchQuery.trim()) {
+      result = result.filter(
+        (product) =>
+          // Tìm kiếm trong tên sản phẩm (không phân biệt hoa thường)
+          product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          // Tìm kiếm trong mã sản phẩm
+          product.code
+            .toLowerCase()
+            .includes(searchQuery.toLowerCase()) ||
+          // Tìm kiếm trong danh mục
+          product.category
+            .toLowerCase()
+            .includes(searchQuery.toLowerCase()),
+      )
+    }
+
+    // Bước 2: Lọc theo danh mục
+    if (advancedFilter.category) {
+      result = result.filter((product) => product.category === advancedFilter.category)
+    }
+
+    // Bước 3: Lọc theo thương hiệu
+    if (advancedFilter.brand) {
+      result = result.filter((product) => product.brand === advancedFilter.brand)
+    }
+
+    // Bước 4: Lọc theo khoảng giá
+    result = result.filter(
+      (product) =>
+        product.priceNumber >= advancedFilter.priceRange.min && product.priceNumber <= advancedFilter.priceRange.max,
+    )
+
+    // Bước 5: Lọc theo trạng thái tồn kho
+    if (advancedFilter.stockStatus) {
+      if (advancedFilter.stockStatus === "in-stock") {
+        result = result.filter((product) => product.stock > 0)
+      } else if (advancedFilter.stockStatus === "out-of-stock") {
+        result = result.filter((product) => product.stock === 0)
+      } else if (advancedFilter.stockStatus === "low-stock") {
+        result = result.filter((product) => product.stock > 0 && product.stock <= 10)
+      }
+    }
+
+    // Bước 6: Lọc theo trạng thái sản phẩm
+    if (advancedFilter.status) {
+      result = result.filter((product) => product.status === advancedFilter.status)
+    }
+
+    return result
+  }, [searchQuery, advancedFilter]) // Chỉ tính toán lại khi searchQuery hoặc advancedFilter thay đổi
+
+  // Tính toán dữ liệu cho phân trang
   const paginationData = useMemo(() => {
-    // Nếu có lọc frontend cho stockStatus hoặc priceRange, thì filteredProducts sẽ khác products
-    // Nếu không, chỉ cần dùng trực tiếp products từ state
+    const totalItems = filteredProducts.length // Tổng số sản phẩm sau khi lọc
+    const totalPages = Math.ceil(totalItems / itemsPerPage) // Tổng số trang
+    const startIndex = (currentPage - 1) * itemsPerPage // Chỉ số bắt đầu
+    const endIndex = startIndex + itemsPerPage // Chỉ số kết thúc
+    const currentItems = filteredProducts.slice(startIndex, endIndex) // Sản phẩm của trang hiện tại
+
     return {
-      currentItems: products, // products đã là dữ liệu của trang hiện tại từ backend
+      currentItems,
       totalItems,
       totalPages,
       currentPage,
       itemsPerPage,
-    };
-  }, [products, totalItems, totalPages, currentPage, itemsPerPage]);
-
-
-  if (loading && products.length === 0) {
-    return (
-      <BoCucAdmin title="Quản lý sản phẩm">
-        <div className="text-center py-12">Đang tải sản phẩm...</div>
-      </BoCucAdmin>
-    );
-  }
-
-  if (error) {
-    return (
-      <BoCucAdmin title="Quản lý sản phẩm">
-        <div className="text-center py-12 text-red-500">Lỗi: {error}</div>
-      </BoCucAdmin>
-    );
-  }
+    }
+  }, [filteredProducts, currentPage, itemsPerPage])
 
   return (
     <BoCucAdmin title="Quản lý sản phẩm">
+      {/* Component thanh công cụ với tìm kiếm và nút thêm sản phẩm */}
       <ThaoTacSanPham
         onSearch={handleSearch}
         searchQuery={searchQuery}
         onToggleAdvancedFilter={() => setShowAdvancedFilter(!showAdvancedFilter)}
         showAdvancedFilter={showAdvancedFilter}
         onResetFilters={handleResetFilters}
-        totalResults={totalItems}
+        totalResults={paginationData.totalItems}
       />
 
+      {/* Component bộ lọc nâng cao - chỉ hiển thị khi showAdvancedFilter = true */}
       {showAdvancedFilter && (
         <LocNangCao
           filter={advancedFilter}
           onFilterChange={handleAdvancedFilterChange}
-          categories={categoriesList} // Pass fetched categories
-          brands={brandsList}     // Pass fetched brands
+          products={mockProducts} // Truyền toàn bộ sản phẩm để lấy danh sách danh mục, thương hiệu
         />
       )}
-      
+
+      {/* Component bảng sản phẩm với dữ liệu đã được lọc và phân trang */}
       <BangSanPham
         products={paginationData.currentItems}
         currentPage={paginationData.currentPage}
@@ -282,8 +290,7 @@ export default function ProductsPage() {
         totalItems={paginationData.totalItems}
         itemsPerPage={paginationData.itemsPerPage}
         onPageChange={handlePageChange}
-        onDeleteSuccess={fetchProducts} // Thêm prop này để refetch dữ liệu sau khi xóa
       />
     </BoCucAdmin>
-  );
+  )
 }
