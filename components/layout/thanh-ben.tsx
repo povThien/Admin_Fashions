@@ -33,7 +33,7 @@ export default function ThanhBen({ onClose }: ThanhBenProps) {
 
     // 4. Chờ một chút (đảm bảo mọi thứ đã sạch) rồi redirect
     setTimeout(() => {
-      window.location.replace("https://luxe-customer-3h3s.vercel.app/sign-in?logout=true");
+      window.location.replace("https://luxe-customer-web-25-local.vercel.app/sign-in?logout=true");
     }, 100);
   };
   return (
