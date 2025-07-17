@@ -15,7 +15,7 @@ export default function useAuthGuard() {
 
   useEffect(() => {
     if (isInitialized && !user) {
-      window.location.replace("http://localhost:3003/sign-in");
+      window.location.replace("https://luxe-customer-web-25-local.vercel.app/sign-in");
     }
   }, [isInitialized, user]);
 
