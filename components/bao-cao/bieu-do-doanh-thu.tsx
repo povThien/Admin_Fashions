@@ -1,27 +1,86 @@
 "use client"
 
 import { useEffect, useRef } from "react"
+import {
+  Chart,
+  LineController,
+  LineElement,
+  PointElement,
+  LinearScale,
+  CategoryScale,
+  Title,
+  Tooltip,
+  Legend,
+} from "chart.js"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
-export default function BieuDoDoanhThu() {
+// ✅ Đăng ký các phần cần thiết cho Line chart
+Chart.register(
+  LineController,
+  LineElement,
+  PointElement,
+  LinearScale,
+  CategoryScale,
+  Title,
+  Tooltip,
+  Legend
+)
+
+export default function BieuDoDoanhThu({data} : any) {
   const chartRef = useRef<HTMLCanvasElement>(null)
+  const chartInstanceRef = useRef<Chart | null>(null)
 
   useEffect(() => {
     if (chartRef.current) {
-      // Simulate Chart.js initialization
       const ctx = chartRef.current.getContext("2d")
       if (ctx) {
-        // This would be where Chart.js code goes
-        // For now, we'll just draw a simple placeholder
-        ctx.fillStyle = "#EBBD5B"
-        ctx.fillRect(0, 0, chartRef.current.width, chartRef.current.height)
-        ctx.fillStyle = "white"
-        ctx.font = "16px Arial"
-        ctx.textAlign = "center"
-        ctx.fillText("Biểu đồ doanh thu", chartRef.current.width / 2, chartRef.current.height / 2)
+        // Hủy biểu đồ cũ nếu có
+        if (chartInstanceRef.current) {
+          chartInstanceRef.current.destroy()
+        }
+
+        chartInstanceRef.current = new Chart(ctx, {
+          type: "line", // ✅ loại biểu đồ là 'line'
+          data: {
+            labels: data?.dailyRevenue?.map((item: any) => item.date) || ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "CN"],
+            datasets: [
+              {
+
+                label: "Doanh thu (triệu VNĐ)",
+                data: data?.dailyRevenue?.map((item: any) => item.totalRevenue / 1000000) || [0, 0, 0, 0, 0, 0, 0],
+                borderColor: "#EBBD5B", // 🟢 Custom line color (green)
+                backgroundColor: "rgba(59, 130, 246, 0.2)",
+                tension: 0.4,
+                fill: true,
+                pointRadius: 4,
+                pointHoverRadius: 6,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: true, position: "top" },
+              title: { display: false },
+            },
+            scales: {
+              x: { title: { display: true } },
+              y: {
+                max: Math.max(...data?.dailyRevenue?.map((item: any) => item.totalRevenue / 1000000) || [0, 0, 0, 0, 0, 0, 0]) * 1.5,
+                beginAtZero: true,
+                title: { display: true, text: "Doanh thu (triệu)" },
+              },
+            },
+          },
+        })
       }
     }
-  }, [])
+
+    return () => {
+      chartInstanceRef.current?.destroy()
+    }
+  }, [data])
 
   return (
     <Card>
@@ -34,7 +93,7 @@ export default function BieuDoDoanhThu() {
         </div>
       </CardHeader>
       <CardContent>
-        <div className="h-80 rounded-lg">
+        <div className="h-80 rounded-lg relative">
           <canvas ref={chartRef} className="w-full h-full"></canvas>
         </div>
       </CardContent>

@@ -1,35 +1,38 @@
 import { Card, CardContent } from "@/components/ui/card"
+import {  useMemo } from "react"
 
-export default function ThongKeDoanhThu() {
-  const stats = [
+export default function ThongKeDoanhThu({data}: any) {
+
+
+  const stats = useMemo(() => [
     {
       title: "Tổng doanh thu",
-      value: "$24,780.00",
-      change: "+12.5%",
-      changeType: "increase",
+      value: "đ "+ (data?.current?.totalRevenue ?? 0).toLocaleString("vi-VN"),
+      change: `${(data?.change?.totalRevenue ?? 0) >=0 ? "+": ""}${(data?.change?.totalRevenue ?? 0).toLocaleString("vi-VN")}%`,
+      changeType: (data?.change?.totalRevenue ?? 0) >=0  ? "increase" : "decrease",
       icon: "fas fa-dollar-sign",
-      bgColor: "bg-green-100",
-      textColor: "text-green-600",
+      bgColor:  "bg-green-100" ,
+      textColor: "text-green-600" ,
     },
     {
       title: "Tổng đơn hàng",
-      value: "1,245",
-      change: "+8.3%",
-      changeType: "increase",
+      value: data?.current?.totalOrders ?? 0,
+      change: `${(data?.change?.totalOrders ?? 0) >=0 ? "+": ""}${(data?.change?.totalOrders ?? 0).toLocaleString("vi-VN")}%`,
+      changeType: (data?.change?.totalOrders ?? 0) >=0  ? "increase" : "decrease",
       icon: "fas fa-shopping-bag",
       bgColor: "bg-blue-100",
       textColor: "text-blue-600",
     },
     {
       title: "Giá trị đơn hàng TB",
-      value: "$136.00",
-      change: "+3.9%",
-      changeType: "increase",
+      value: "đ "+ (data?.current?.averageOrderValue ?? 0).toLocaleString("vi-VN"),
+      change: `${(data?.change?.averageOrderValue ?? 0) >=0 ? "+": ""}${(data?.change?.averageOrderValue ?? 0).toLocaleString("vi-VN")}%`,
+      changeType: (data?.change?.averageOrderValue ?? 0) >=0  ? "increase" : "decrease",
       icon: "fas fa-chart-pie",
       bgColor: "bg-purple-100",
       textColor: "text-purple-600",
     },
-  ]
+  ], [data])
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

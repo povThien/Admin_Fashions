@@ -9,7 +9,7 @@ function getToken(): string | null {
         if (user) {
             try {
                 const userData = JSON.parse(user);
-                return userData.accessToken; // <--- Lấy accessToken từ đây
+                return userData.token; // <--- Lấy accessToken từ đây
             } catch (e) {
                 console.error("Lỗi parse user data từ localStorage", e);
                 return null;

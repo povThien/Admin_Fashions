@@ -126,3 +126,12 @@ export const createOrder = async (orderData: any) => {
         throw error.response?.data || new Error("Lỗi khi tạo đơn hàng");
     }
 };
+
+export const getReport = async (query : any) => {
+    try {
+        const response = await apiClient.get('/admin/order/report', { params: query });
+        return response.data;
+    } catch (error: any) {
+        throw error.response?.data || new Error("Lỗi khi tạo đơn hàng");
+    }
+};

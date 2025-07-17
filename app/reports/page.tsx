@@ -4,8 +4,28 @@ import ThongKeDoanhThu from "@/components/bao-cao/thong-ke-doanh-thu"
 import BieuDoDoanhThu from "@/components/bao-cao/bieu-do-doanh-thu"
 import SanPhamBanChayNhat from "@/components/bao-cao/san-pham-ban-chay-nhat"
 import DoanhThuTheoDanhMuc from "@/components/bao-cao/doanh-thu-theo-danh-muc"
+import { useEffect, useState } from "react"
+import { getReport } from "@/lib/orderService"
 
 export default function ReportsPage() {
+  const [stats, setStats] = useState(null)
+  const [query, setQuery] = useState({from: '', to: ''})
+
+  useEffect(() => {
+    const fetchStats = async () => {
+        const res = await getReport({});
+        setStats(res.data);
+    }
+    fetchStats();
+  }, [])
+
+  const handleFilter = async () => {
+    if (!query.from || !query.to) return;
+
+    const res = await getReport(query);
+    setStats(res.data);
+  }
+
   return (
     <BoCucAdmin title="Báo cáo doanh thu">
       <div className="space-y-6">
@@ -15,13 +35,17 @@ export default function ReportsPage() {
             <input
               type="date"
               className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+              value={query.from}
+              onChange={(e) => setQuery({...query, from: e.target.value})}
             />
             <span className="flex items-center">đến</span>
             <input
               type="date"
               className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+              value={query.to}
+              onChange={(e) => setQuery({...query, to: e.target.value})}
             />
-            <button className="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90">Áp dụng</button>
+            <button className="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90" onClick={handleFilter}>Áp dụng</button>
           </div>
 
           <div className="flex space-x-2 w-full md:w-auto">
@@ -41,12 +65,12 @@ export default function ReportsPage() {
           </div>
         </div>
 
-        <ThongKeDoanhThu />
-        <BieuDoDoanhThu />
+        <ThongKeDoanhThu data={stats} />
+        <BieuDoDoanhThu data={stats} />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <SanPhamBanChayNhat />
-          <DoanhThuTheoDanhMuc />
+          <SanPhamBanChayNhat data={stats} />
+          <DoanhThuTheoDanhMuc data={stats} />
         </div>
       </div>
     </BoCucAdmin>

@@ -1,13 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { useMemo } from "react"
 
-export default function SanPhamBanChayNhat() {
-  const products = [
-    { name: "Đồng hồ cao cấp", sales: 128, revenue: "$6,912.00" },
-    { name: "Ví da", sales: 96, revenue: "$4,224.00" },
-    { name: "Khăn lụa", sales: 85, revenue: "$2,975.00" },
-    { name: "Vòng tay vàng", sales: 64, revenue: "$5,760.00" },
-    { name: "Áo len cashmere", sales: 52, revenue: "$3,640.00" },
-  ]
+export default function SanPhamBanChayNhat({data}: any) {
+
+  const products = useMemo(() => data?.topProducts.map((product: any) => ({ name: product.ten_sp, sales: product.totalSold, revenue: "đ " + product.totalRevenue.toLocaleString("vi-VN") })) ?? [], [data])
 
   return (
     <Card>
