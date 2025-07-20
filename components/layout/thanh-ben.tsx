@@ -33,7 +33,7 @@ export default function ThanhBen({ onClose }: ThanhBenProps) {
 
     // 4. Chờ một chút (đảm bảo mọi thứ đã sạch) rồi redirect
     setTimeout(() => {
-      window.location.replace("https://luxe-customer-web-25-local.vercel.app/sign-in?logout=true");
+      window.location.replace("http://localhost:3003/sign-in?logout=true");
     }, 100);
   };
   return (
@@ -128,6 +128,21 @@ export default function ThanhBen({ onClose }: ThanhBenProps) {
           >
             <i className={`fas fa-ticket-alt w-6 text-center mr-3 ${isActive("/vouchers") ? "text-primary" : ""}`}></i>
             <span>Voucher</span>
+          </Link>
+
+          <Link
+            href="/comments"
+            className={`flex items-center px-3 py-3 rounded-lg text-gray-700 hover:bg-gray-50 ${isActive("/comments") ? "active-menu" : ""}`}
+          >
+            <i className={`fas fa-comment w-6 text-center mr-3 ${isActive("/comments") ? "text-primary" : ""}`}></i>
+            <span> Bình Luận </span>
+          </Link>
+          <Link
+            href="/bands"
+            className={`flex items-center px-3 py-3 rounded-lg text-gray-700 hover:bg-gray-50 ${isActive("/bands") ? "active-menu" : ""}`}
+          >
+            <i className={`fas fa-venus-mars w-6 text-center mr-3 ${isActive("/bands") ? "text-primary" : ""}`}></i>
+            <span> Thương Hiệu </span>
           </Link>
 
           <div className="px-3 pt-6 pb-2">

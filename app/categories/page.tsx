@@ -50,7 +50,7 @@ export default function CategoriesPage() {
     setQueryParams(prev => ({ ...prev, search: query, page: 1 }));
   };
 
-  const handlePageChange = (page: number) => {
+  const handlePageChange = (page: number) => {  
     setQueryParams(prev => ({ ...prev, page }));
   };
 

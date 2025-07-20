@@ -267,7 +267,7 @@ export default function OrderDetailPage() {
                                         </Select>
                                     </div>
 
-                                    {selectedStatus === 'Đã xác nhận' && !order.id_shipper && (
+                                    {selectedStatus === 'Đã xác nhận' && (
                                         <div>
                                             <Label htmlFor="shipper-id" className="text-sm font-medium">Gán ID Shipper</Label>
                                             <Input
