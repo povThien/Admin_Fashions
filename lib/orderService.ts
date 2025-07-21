@@ -6,6 +6,7 @@ interface OrderParams {
     search?: string;
     trang_thai_don_hang?: string;
     dateRange?: string;
+
 }
 
 const apiClient = axios.create({
@@ -104,15 +105,9 @@ export const updateOrderStatus = async (id: string, payload: { trang_thai_don_ha
 
 export const getShippers = async () => {
     try {
-        // Tạm thời trả về dữ liệu mẫu. Khi có API thật, hãy thay thế
-        console.warn("Sử dụng dữ liệu shipper mẫu. Cần tạo API /api/admin/users?vai_tro=shipper.");
-        return {
-            success: true,
-            data: [
-                { _id: "66832de0dbaff710229731a3f", ho_ten: "Shipper A" },
-                { _id: "6684e90403f1e13838535a3e", ho_ten: "Shipper B" },
-            ]
-        };
+        // THAY ĐỔI: Gọi API thật sự để lấy danh sách người dùng có vai trò 'shipper'.
+        const response = await apiClient.get('/admin/users', { params: { vai_tro: 'shipper' } });
+        return response.data;
     } catch (error: any) {
         throw error.response?.data || new Error("Lỗi khi lấy danh sách shipper");
     }
@@ -128,7 +123,7 @@ export const createOrder = async (orderData: any) => {
     }
 };
 
-export const getReport = async (query : any) => {
+export const getReport = async (query: any) => {
     try {
         const response = await apiClient.get('/admin/order/report', { params: query });
         return response.data;

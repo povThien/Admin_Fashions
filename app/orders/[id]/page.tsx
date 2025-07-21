@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react"
 import { useParams, useRouter } from "next/navigation"
 import Image from "next/image";
-import { getOrderById, updateOrderStatus } from "@/lib/orderService"
+import { getOrderById, updateOrderStatus, getShippers } from "@/lib/orderService"
 import NhanTrangThai from "@/components/ui/nhan-trang-thai"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -24,8 +24,14 @@ export default function OrderDetailPage() {
     const [error, setError] = useState<string | null>(null);
 
     const [selectedStatus, setSelectedStatus] = useState("");
+
     const [shipperId, setShipperId] = useState("");
     const [isUpdating, setIsUpdating] = useState(false);
+
+    // THAY ĐỔI: Thêm state để lưu danh sách shippers và trạng thái tải
+    const [shippers, setShippers] = useState<any[]>([]);
+    const [isShipperLoading, setIsShipperLoading] = useState(false);
+
 
     // Hàm tải dữ liệu đơn hàng từ API
     const fetchData = useCallback(async () => {
@@ -52,6 +58,29 @@ export default function OrderDetailPage() {
         fetchData();
     }, [fetchData]);
 
+    // THAY ĐỔI: Thêm useEffect để lấy danh sách shipper khi component được tải
+    useEffect(() => {
+        const fetchShippers = async () => {
+            setIsShipperLoading(true);
+            try {
+                const res = await getShippers();
+                if (res.success) {
+                    setShippers(res.data);
+                } else {
+                    console.error("Không thể tải danh sách shipper:", res.message);
+                }
+            } catch (err) {
+                console.error("Lỗi khi tải danh sách shipper:", err);
+            } finally {
+                setIsShipperLoading(false);
+            }
+        };
+
+        fetchShippers();
+    }, []); // Mảng rỗng đảm bảo chỉ chạy 1 lần
+
+
+
     // Logic để xác định các trạng thái tiếp theo mà Admin có thể chọn
     const getNextAvailableStatuses = (currentStatus: string): string[] => {
         const statusFlow: { [key: string]: string[] } = {
@@ -75,12 +104,21 @@ export default function OrderDetailPage() {
             trang_thai_don_hang: selectedStatus,
         };
 
+        // if (selectedStatus === 'Đã xác nhận' && !order.id_shipper) {
+        //     if (!shipperId.trim()) {
+        //         alert("Vui lòng nhập ID shipper để xác nhận đơn hàng.");
+        //         return;
+        //     }
+        //     payload.id_shipper = shipperId.trim();
+        // }
+
         if (selectedStatus === 'Đã xác nhận' && !order.id_shipper) {
-            if (!shipperId.trim()) {
-                alert("Vui lòng nhập ID shipper để xác nhận đơn hàng.");
+            // THAY ĐỔI: Cập nhật logic kiểm tra
+            if (!shipperId) {
+                alert("Vui lòng chọn một shipper để xác nhận đơn hàng.");
                 return;
             }
-            payload.id_shipper = shipperId.trim();
+            payload.id_shipper = shipperId;
         }
 
         setIsUpdating(true);
@@ -253,40 +291,54 @@ export default function OrderDetailPage() {
                             </div>
                         </div>
 
-                        {availableStatuses.length > 0 && (
-                            <div>
-                                <h2 className="text-lg font-semibold mb-4">Cập nhật đơn hàng</h2>
-                                <div className="space-y-4 max-w-md">
-                                    <div>
-                                        <Label htmlFor="status-select" className="text-sm font-medium">Cập nhật trạng thái</Label>
-                                        <Select onValueChange={setSelectedStatus} value={selectedStatus}>
-                                            <SelectTrigger id="status-select"><SelectValue placeholder="Chọn trạng thái mới" /></SelectTrigger>
-                                            <SelectContent>
-                                                {availableStatuses.map(status => <SelectItem key={status} value={status}>{status}</SelectItem>)}
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-
-                                    {selectedStatus === 'Đã xác nhận' && (
+                        {
+                            availableStatuses.length > 0 && (
+                                <div>
+                                    <h2 className="text-lg font-semibold mb-4">Cập nhật đơn hàng</h2>
+                                    <div className="space-y-4 max-w-md">
                                         <div>
-                                            <Label htmlFor="shipper-id" className="text-sm font-medium">Gán ID Shipper</Label>
-                                            <Input
-                                                id="shipper-id" type="text" value={shipperId}
-                                                onChange={(e) => setShipperId(e.target.value)}
-                                                placeholder="Nhập ID shipper để xác nhận"
-                                            />
+                                            <Label htmlFor="status-select" className="text-sm font-medium">Cập nhật trạng thái</Label>
+                                            <Select onValueChange={setSelectedStatus} value={selectedStatus}>
+                                                <SelectTrigger id="status-select"><SelectValue placeholder="Chọn trạng thái mới" /></SelectTrigger>
+                                                <SelectContent>
+                                                    {availableStatuses.map(status => <SelectItem key={status} value={status}>{status}</SelectItem>)}
+                                                </SelectContent>
+                                            </Select>
                                         </div>
-                                    )}
 
-                                    <div className="flex justify-end gap-2 pt-2">
-                                        <Button variant="outline" onClick={() => setSelectedStatus(order.trang_thai_don_hang)}>Hủy</Button>
-                                        <Button onClick={handleUpdate} disabled={isUpdating}>
-                                            {isUpdating ? 'Đang lưu...' : 'Lưu thay đổi'}
-                                        </Button>
+                                        {/* THAY ĐỔI: Thay thế Input bằng Select để chọn Shipper */}
+                                        {selectedStatus === 'Đã xác nhận' && (
+                                            <div>
+                                                <Label htmlFor="shipper-select" className="text-sm font-medium">Gán Shipper</Label>
+                                                <Select onValueChange={setShipperId} value={shipperId}>
+                                                    <SelectTrigger id="shipper-select">
+                                                        <SelectValue placeholder="Chọn một shipper..." />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {isShipperLoading ? (
+                                                            <SelectItem value="loading" disabled>Đang tải danh sách...</SelectItem>
+                                                        ) : (
+                                                            shippers.map(shipper => (
+                                                                <SelectItem key={shipper._id} value={shipper._id}>
+                                                                    {shipper.ho_ten}
+                                                                </SelectItem>
+                                                            ))
+                                                        )}
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                        )}
+
+                                        <div className="flex justify-end gap-2 pt-2">
+                                            <Button variant="outline" onClick={() => setSelectedStatus(order.trang_thai_don_hang)}>Hủy</Button>
+                                            <Button onClick={handleUpdate} disabled={isUpdating}>
+                                                {isUpdating ? 'Đang lưu...' : 'Lưu thay đổi'}
+                                            </Button>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        )}
+                            )
+                        }
                     </section>
                 </div>
             </div>
