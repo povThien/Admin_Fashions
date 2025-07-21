@@ -1,12 +1,5 @@
 import axios from 'axios';
 
-interface OrderParams {
-    page?: number;
-    limit?: number;
-    search?: string;
-    trang_thai_don_hang?: string;
-    dateRange?: string;
-}
 
 const apiClient = axios.create({
     baseURL: process.env.NEXT_PUBLIC_API_URL,
@@ -75,64 +68,20 @@ apiClient.interceptors.response.use(
 
 // --- CÁC HÀM API ---
 
-export const getOrders = async (params: OrderParams) => {
+export const getDashboardSummary = async () => {
     try {
-        const response = await apiClient.get('/admin/order', { params });
+        const response = await apiClient.get('/admin/dashboard/summary');
         return response.data;
     } catch (error: any) {
-        throw error.response?.data || new Error("Lỗi khi lấy danh sách đơn hàng");
+        throw error.response?.data || new Error("Lỗi khi lấy thống kê tống quan");
     }
 };
 
-export const getOrderById = async (id: string) => {
+export const getDashboardTopProductsMonth = async () => {
     try {
-        const response = await apiClient.get(`/admin/order/${id}`);
+        const response = await apiClient.get('/admin/dashboard/san-pham-ban-chay');
         return response.data;
     } catch (error: any) {
-        throw error.response?.data || new Error("Lỗi khi lấy chi tiết đơn hàng");
-    }
-};
-
-export const updateOrderStatus = async (id: string, payload: { trang_thai_don_hang: string; id_shipper?: string }) => {
-    try {
-        const response = await apiClient.put(`/admin/order/${id}/status`, payload);
-        return response.data;
-    } catch (error: any) {
-        throw error.response?.data || new Error("Lỗi khi cập nhật trạng thái");
-    }
-};
-
-export const getShippers = async () => {
-    try {
-        // Tạm thời trả về dữ liệu mẫu. Khi có API thật, hãy thay thế
-        console.warn("Sử dụng dữ liệu shipper mẫu. Cần tạo API /api/admin/users?vai_tro=shipper.");
-        return {
-            success: true,
-            data: [
-                { _id: "66832de0dbaff710229731a3f", ho_ten: "Shipper A" },
-                { _id: "6684e90403f1e13838535a3e", ho_ten: "Shipper B" },
-            ]
-        };
-    } catch (error: any) {
-        throw error.response?.data || new Error("Lỗi khi lấy danh sách shipper");
-    }
-}
-
-
-export const createOrder = async (orderData: any) => {
-    try {
-        const response = await apiClient.post('/admin/order', orderData);
-        return response.data;
-    } catch (error: any) {
-        throw error.response?.data || new Error("Lỗi khi tạo đơn hàng");
-    }
-};
-
-export const getReport = async (query : any) => {
-    try {
-        const response = await apiClient.get('/admin/order/report', { params: query });
-        return response.data;
-    } catch (error: any) {
-        throw error.response?.data || new Error("Lỗi khi tạo đơn hàng");
+        throw error.response?.data || new Error("Lỗi khi lấy thống kê tống quan");
     }
 };
