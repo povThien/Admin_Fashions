@@ -37,7 +37,7 @@ export default function ThanhBen({ onClose }: ThanhBenProps) {
     }, 100);
   };
   return (
-    <aside className="w-64 bg-white shadow-md flex flex-col">
+    <aside className="w-64 bg-white shadow-md flex flex-col h-screen">
       {/* Brand */}
       <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
         <h1 className="text-xl font-bold">
@@ -72,7 +72,7 @@ export default function ThanhBen({ onClose }: ThanhBenProps) {
       </div>
 
       {/* Menu */}
-      <nav className="flex-1 overflow-y-auto py-4">
+      <nav className="flex-1 overflow-y-auto py-4 no-scrollbar">
         <div className="space-y-1 px-4">
           <Link
             href="/dashboard"
@@ -90,13 +90,13 @@ export default function ThanhBen({ onClose }: ThanhBenProps) {
             <span>Sản phẩm</span>
           </Link>
 
-          <Link
+          {/* <Link
             href="/variants"
             className={`flex items-center px-3 py-3 rounded-lg text-gray-700 hover:bg-gray-50 ${isActive("/variants") ? "active-menu" : ""}`}
           >
             <i className="fas fa-layer-group w-6 text-center mr-3"></i>
             <span>Biến thể sản phẩm</span>
-          </Link>
+          </Link> */}
 
           <Link
             href="/categories"
@@ -138,10 +138,10 @@ export default function ThanhBen({ onClose }: ThanhBenProps) {
             <span> Bình Luận </span>
           </Link>
           <Link
-            href="/bands"
-            className={`flex items-center px-3 py-3 rounded-lg text-gray-700 hover:bg-gray-50 ${isActive("/bands") ? "active-menu" : ""}`}
+            href="/brands"
+            className={`flex items-center px-3 py-3 rounded-lg text-gray-700 hover:bg-gray-50 ${isActive("/brands") ? "active-menu" : ""}`}
           >
-            <i className={`fas fa-venus-mars w-6 text-center mr-3 ${isActive("/bands") ? "text-primary" : ""}`}></i>
+            <i className={`fas fa-venus-mars w-6 text-center mr-3 ${isActive("/brands") ? "text-primary" : ""}`}></i>
             <span> Thương Hiệu </span>
           </Link>
 
@@ -161,13 +161,13 @@ export default function ThanhBen({ onClose }: ThanhBenProps) {
             <p className="text-xs font-medium text-gray-400 uppercase tracking-wider">Cài đặt</p>
           </div>
 
-          <Link
-            href="/settings"
-            className={`flex items-center px-3 py-3 rounded-lg text-gray-700 hover:bg-gray-50 ${isActive("/settings") ? "active-menu" : ""}`}
+          {/* <Link
+            href="/setting"
+            className={`flex items-center px-3 py-3 rounded-lg text-gray-700 hover:bg-gray-50 ${isActive("/setting") ? "active-menu" : ""}`}
           >
             <i className="fas fa-cog w-6 text-center mr-3"></i>
             <span>Cài đặt</span>
-          </Link>
+          </Link> */}
         </div>
       </nav>
 
