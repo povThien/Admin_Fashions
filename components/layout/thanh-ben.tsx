@@ -87,11 +87,11 @@ export default function ThanhBen({ onClose }: ThanhBenProps) {
             className={`flex items-center px-3 py-3 rounded-lg text-gray-700 hover:bg-gray-50 ${isActive("/products") ? "active-menu" : ""}`}
           >
             <i className="fas fa-tshirt w-6 text-center mr-3"></i>
-            <span>Sản phẩm</span>
+            <span>Sản phẩm & biến thể </span>
           </Link>
 
           {/* <Link
-            href="/variants"
+            href="/variants"  
             className={`flex items-center px-3 py-3 rounded-lg text-gray-700 hover:bg-gray-50 ${isActive("/variants") ? "active-menu" : ""}`}
           >
             <i className="fas fa-layer-group w-6 text-center mr-3"></i>

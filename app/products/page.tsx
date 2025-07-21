@@ -117,7 +117,7 @@ export default function ProductsPage() {
         ...(priceRange !== 'all' && { priceRange })
       });
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}admin/product/phucdev?${queryParams}`);
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/product/phucdev?${queryParams}`);
 
       if (!response.ok) {
         throw new Error('Failed to fetch products');
@@ -139,7 +139,7 @@ export default function ProductsPage() {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}admin/product/phucdev/categories/all`);
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/product/phucdev/categories/all`);
         if (!response.ok) {
           throw new Error('Failed to fetch categories');
         }
@@ -155,7 +155,7 @@ export default function ProductsPage() {
   useEffect(() => {
     const fetchBrands = async () => {
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}admin/product/phucdev/brands/all`);
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/product/phucdev/brands/all`);
         if (!response.ok) {
           throw new Error('Failed to fetch brands');
         }
@@ -260,7 +260,7 @@ export default function ProductsPage() {
 
   const handleToggleVisibility = async (id: string) => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}admin/product/phucdev/${id}/toggle-visibility`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/product/phucdev/${id}/toggle-visibility`, {
         method: 'PUT'
       });
       if (!response.ok) throw new Error('Cập nhật trạng thái thất bại');

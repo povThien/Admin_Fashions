@@ -130,7 +130,7 @@ export default function OrderDetailPage() {
     const customerEmail = order.email || order.id_customer?.email || 'Không có';
     const customerPhone = order.sdt || order.id_customer?.sdt || 'Không có';
 
-    const subTotal = order.chi_tiet.reduce((acc: number, item: any) => acc + (item.gia_ban || item.gia) * item.so_luong, 0);
+    const subTotal = order.variants.reduce((acc: number, item: any) => acc + (item.gia_ban || item.gia) * item.so_luong, 0);
     const shippingFee = order.phi_van_chuyen || 0;
     const discountAmount = order.gia_giam || 0;
     const finalTotal = subTotal + shippingFee - discountAmount;
@@ -169,7 +169,7 @@ export default function OrderDetailPage() {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {order.chi_tiet.map((item: any, index: number) => {
+                                    {order.variants.map((item: any, index: number) => {
                                         const variantInfo = item.id_variant;
                                         const isVariantPopulated = typeof variantInfo === 'object' && variantInfo !== null;
 

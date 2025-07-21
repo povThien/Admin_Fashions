@@ -9,48 +9,48 @@ type StatType = {
   bgColor: string;
   textColor: string;
 }
-export default function ThongKeTongQuan({summary}: any) {
+export default function ThongKeTongQuan({ summary }: any) {
 
   const stats = useMemo<StatType[]>(() => {
-      return [
-        {
-          title: "Tổng sản phẩm",
-          value: summary?.total_products || 0,
-          icon: "fas fa-tshirt",
-          color: "blue",
-          bgColor: "bg-blue-50",
-          textColor: "text-blue-500",
-        },
-        {
-          title: "Đơn hàng hôm nay",
-          value: summary?.total_orders || 0,
-          icon: "fas fa-shopping-bag",
-          color: "green",
-          bgColor: "bg-green-50",
-          textColor: "text-green-500",
-        },
-        {
-          title: "Khách hàng mới",
-          value: summary?.total_customers || 0,
-          icon: "fas fa-users",
-          color: "purple",
-          bgColor: "bg-purple-50",
-          textColor: "text-purple-500",
-        },
-        {
-          title: "Doanh thu hôm nay",
-          value: '₫ '+ summary?.today_revenue?.toLocaleString("vi-VN") || 0,
-          icon: "fas fa-dollar-sign",
-          color: "yellow",
-          bgColor: "bg-yellow-50",
-          textColor: "text-yellow-500",
-        },
-      ]
-    
+    return [
+      {
+        title: "Tổng sản phẩm",
+        value: summary?.total_products || 0,
+        icon: "fas fa-tshirt",
+        color: "blue",
+        bgColor: "bg-blue-50",
+        textColor: "text-blue-500",
+      },
+      {
+        title: "Đơn hàng hôm nay",
+        value: summary?.total_orders || 0,
+        icon: "fas fa-shopping-bag",
+        color: "green",
+        bgColor: "bg-green-50",
+        textColor: "text-green-500",
+      },
+      // {
+      //   title: "Khách hàng mới",
+      //   value: summary?.total_customers || 0,
+      //   icon: "fas fa-users",
+      //   color: "purple",
+      //   bgColor: "bg-purple-50",
+      //   textColor: "text-purple-500",
+      // },
+      {
+        title: "Doanh thu hôm nay",
+        value: '₫ ' + summary?.today_revenue?.toLocaleString("vi-VN") || 0,
+        icon: "fas fa-dollar-sign",
+        color: "yellow",
+        bgColor: "bg-yellow-50",
+        textColor: "text-yellow-500",
+      },
+    ]
+
   }, [summary]);
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
       {stats.map((stat, index) => (
         <Card key={index}>
           <CardContent className="p-6">

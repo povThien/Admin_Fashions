@@ -6,7 +6,7 @@ export default function ThaoTacNhanh() {
     {
       title: "Thêm sản phẩm",
       icon: "fas fa-plus",
-      href: "/products/add",
+      href: "/products/add-product",
     },
     {
       title: "Thêm danh mục",
@@ -19,9 +19,9 @@ export default function ThaoTacNhanh() {
       href: "/reports",
     },
     {
-      title: "Cài đặt",
-      icon: "fas fa-cog",
-      href: "/settings",
+      title: "Users",
+      icon: "fas fa-user-cog",
+      href: "/users",
     },
   ]
 

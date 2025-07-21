@@ -72,7 +72,7 @@ export default function BangBinhLuan({
                       <div className="text-sm text-gray-900">{comment.id_san_pham?.ten_sp || 'N/A'}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{comment.id_customer?.username || 'N/A'}</div>
+                      <div className="text-sm text-gray-900">{comment.id_customer?.ho_ten || 'N/A'}</div>
                       <div className="text-xs text-gray-500">{comment.id_customer?.email || 'N/A'}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">

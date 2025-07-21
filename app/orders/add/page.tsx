@@ -60,7 +60,7 @@ export default function AddOrderPage() {
 
     const orderData = {
       ...customerInfo,
-      chi_tiet: items.map(item => ({
+      variants: items.map(item => ({
         id_variant: item.id_variant,
         so_luong: Number(item.so_luong)
       })),

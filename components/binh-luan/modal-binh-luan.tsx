@@ -1,5 +1,5 @@
 "use client"
-
+import Image from 'next/image'
 import { Comment } from "@/lib/commentService"
 import { format } from 'date-fns';
 
@@ -36,16 +36,28 @@ export default function ModalBinhLuan({ comment, isOpen, onClose, onUpdateCommen
         <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full">
           <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
             <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">Chi tiết bình luận</h3>
-
             <div className="space-y-4">
               {/* User Info */}
               <div className="flex items-start space-x-4">
-                <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-primary">
-                  <i className="fas fa-user"></i>
+
+
+                <div className="w-10 h-10 rounded-full bg-gray-100 overflow-hidden">
+                  {comment.id_customer?.avatar && (
+                    <Image
+                      src={comment.id_customer.avatar}
+                      alt="User Avatar"
+                      width={40}
+                      height={40}
+                      className="object-cover"
+                    />
+                  )}
                 </div>
+
+
                 <div className="flex-1">
                   <div className="flex items-center justify-between">
-                    <h4 className="font-medium">{comment.id_customer?.username || 'N/A'}</h4>
+
+                    <h4 className="font-medium">{comment.id_customer?.ho_ten}</h4>
                     <span className="text-xs text-gray-500">{format(new Date(comment.created_at), 'dd/MM/yyyy HH:mm')}</span>
                   </div>
                   <p className="text-sm text-gray-700 mt-1">{comment.noi_dung}</p>
@@ -61,9 +73,17 @@ export default function ModalBinhLuan({ comment, isOpen, onClose, onUpdateCommen
               <div className="border-t border-gray-200 pt-4">
                 <h5 className="font-medium text-sm mb-2">Thông tin sản phẩm</h5>
                 <div className="flex items-center space-x-3">
-                  <div className="w-16 h-16 bg-gray-100 rounded-md flex items-center justify-center">
-                    <i className="fas fa-tshirt text-gray-400 text-2xl"></i>
-                  </div>
+                  {/* <div className="w-16 h-16 bg-gray-100 rounded-md flex items-center justify-center">
+                    {comment.id_san_pham?.hinh_chinh && (
+                      <Image
+                        src={comment.id_san_pham.hinh_chinh}
+                        alt="User Avatar"
+                        width={40}
+                        height={40}
+                        className="object-cover"
+                      />
+                    )}
+                  </div> */}
                   <div>
                     <p className="text-sm font-medium">{comment.id_san_pham?.ten_sp || 'N/A'}</p>
                     <p className="text-xs text-gray-500">Slug: {comment.id_san_pham?.slug || 'N/A'}</p>
@@ -99,6 +119,6 @@ export default function ModalBinhLuan({ comment, isOpen, onClose, onUpdateCommen
           </div>
         </div>
       </div>
-    </div>
+    </div >
   )
 }

@@ -91,7 +91,7 @@ export default function EditProductPage({ params }: { params: Promise<{ slug: st
       try {
         setLoading(true);
         // Fetch product details
-        const productRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}admin/product/phucdev/slug/${slug}`);
+        const productRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/product/phucdev/slug/${slug}`);
         if (!productRes.ok) {
           throw new Error('Failed to fetch product data');
         }
@@ -131,8 +131,8 @@ export default function EditProductPage({ params }: { params: Promise<{ slug: st
 
         // Fetch categories and brands
         const [categoriesRes, brandsRes] = await Promise.all([
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}admin/product/phucdev/categories/all`),
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}admin/product/phucdev/brands/all`)
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/product/phucdev/categories/all`),
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/product/phucdev/brands/all`)
         ]);
 
         if (!categoriesRes.ok) {
@@ -327,7 +327,7 @@ export default function EditProductPage({ params }: { params: Promise<{ slug: st
         variants: variantsToSubmit,
       };
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}admin/product/phucdev/slug/${slug}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/product/phucdev/slug/${slug}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -794,7 +794,7 @@ export default function EditProductPage({ params }: { params: Promise<{ slug: st
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                           </svg>
                           <span className="text-sm text-gray-500 text-center px-4">
-                            Click để chọn ảnh chính<br/>
+                            Click để chọn ảnh chính<br />
                             <span className="text-xs">PNG, JPG, GIF up to 10MB</span>
                           </span>
                         </label>
@@ -836,7 +836,7 @@ export default function EditProductPage({ params }: { params: Promise<{ slug: st
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                           </svg>
                           <span className="text-sm text-gray-500 text-center px-4">
-                            Click để chọn nhiều ảnh<br/>
+                            Click để chọn nhiều ảnh<br />
                             <span className="text-xs">Có thể chọn nhiều file cùng lúc</span>
                           </span>
                         </label>

@@ -86,8 +86,8 @@ export default function DonHangGanDay({ orders }: any) {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <NutThaoTac
-                        viewUrl={`/orders/${order._id}`}
-                        onEdit={() => router.push(`/orders/${order._id}`)}
+                      // viewUrl={`/orders/${order._id}`}
+                      // onEdit={() => router.push(`/orders/${order._id}`)} 
                       />
                     </td>
                   </tr>

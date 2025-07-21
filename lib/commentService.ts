@@ -8,11 +8,14 @@ export interface Comment {
         _id: string;
         ten_sp: string;
         slug: string;
+
     };
     id_customer: {
         _id: string;
         username: string;
         email: string;
+        ho_ten: string;
+        avatar: string;
     };
     diem: number | null;
     an_hien: boolean;

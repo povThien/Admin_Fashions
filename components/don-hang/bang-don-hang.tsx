@@ -101,11 +101,11 @@ export default function BangDonHang({ orders, pagination, onPageChange }: BangDo
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <NutThaoTac
-                        viewUrl={`/orders/${order._id}`}
+                        // viewUrl={`/orders/${order._id}`}
                         onEdit={() => router.push(`/orders/${order._id}`)}
                       // onDelete={() => handleDelete(order._id)}
                       />
-                    </td>
+                    </td> 
                   </tr>
                 ))
               ) : (
