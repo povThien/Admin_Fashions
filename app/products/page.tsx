@@ -274,7 +274,7 @@ export default function ProductsPage() {
   const handleDeleteProduct = async (id: string) => {
     if (!window.confirm('Bạn có chắc chắn muốn xóa sản phẩm này không?')) return;
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}admin/product/phucdev/${id}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/product/phucdev/${id}`, {
         method: 'DELETE'
       });
       if (!response.ok) throw new Error('Xóa sản phẩm thất bại');
