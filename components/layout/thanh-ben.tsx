@@ -40,8 +40,13 @@ export default function ThanhBen({ onClose }: ThanhBenProps) {
     <aside className="w-64 bg-white shadow-md flex flex-col h-screen">
       {/* Brand */}
       <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
-        <h1 className="text-xl font-bold">
-          <span className="text-primary">LUXE</span> ADMIN
+        <h1 className="flex items-center text-xl font-bold">
+          <img
+            src="https://res.cloudinary.com/dohwmkapy/image/upload/v1753079396/logo_cho_thang_phuc_tbzvgq.svg"
+            alt="Luxe Logo"
+            className="h-6 mr-2"
+          />
+          ADMIN
         </h1>
         {onClose && (
           <button className="md:hidden text-gray-500" onClick={onClose}>

@@ -34,7 +34,7 @@ export default function DashboardPage() {
     const fetchOrders = async () => {
       const response = await getOrders({
         page: 1,
-        limit: 7,
+        limit: 5,
         trang_thai_don_hang: "",
         dateRange: "today",
       });

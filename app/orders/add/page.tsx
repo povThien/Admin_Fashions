@@ -1,66 +1,65 @@
 "use client"
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import useAuthGuard from "@/app/hooks/useAuthGuard"
-import { createOrder } from "@/lib/orderService" // Import hàm API mới
+import { useState, FormEvent, ChangeEvent } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import useAuthGuard from "@/app/hooks/useAuthGuard";
+import { createOrder } from "@/lib/orderService";
+import OrderItemsManager from "@/components/don-hang/OrderItemsManager";
+
+// --- Định nghĩa kiểu dữ liệu ---
+interface CustomerInfo {
+  ho_ten: string;
+  email: string;
+  sdt: string;
+  dia_chi_giao_hang: string;
+  ghi_chu: string;
+  phuong_thuc_thanh_toan: string;
+}
+
+interface OrderItem {
+  id_variant: string;
+  so_luong: number;
+}
 
 export default function AddOrderPage() {
   useAuthGuard();
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // State cho thông tin khách hàng
-  const [customerInfo, setCustomerInfo] = useState({
+  const [customerInfo, setCustomerInfo] = useState<CustomerInfo>({
     ho_ten: '',
     email: '',
     sdt: '',
     dia_chi_giao_hang: '',
     ghi_chu: '',
-    phuong_thuc_thanh_toan: 'COD' // SỬA LỖI: Đặt giá trị mặc định là chữ HOA
+    phuong_thuc_thanh_toan: 'COD'
   });
 
-  // State cho danh sách sản phẩm
-  const [items, setItems] = useState([{ id_variant: '', so_luong: 1 }]);
+  const [items, setItems] = useState<OrderItem[]>([]);
 
-  // Hàm xử lý thay đổi thông tin khách hàng
-  const handleCustomerChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleCustomerChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setCustomerInfo(prev => ({ ...prev, [name]: value }));
   };
 
-  // Hàm xử lý thay đổi thông tin sản phẩm
-  const handleItemChange = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    const newItems = [...items];
-    newItems[index] = { ...newItems[index], [name]: value };
-    setItems(newItems);
-  };
-
-  // Hàm thêm một dòng sản phẩm mới
-  const addItemRow = () => {
-    setItems([...items, { id_variant: '', so_luong: 1 }]);
-  };
-
-  // Hàm xóa một dòng sản phẩm
-  const removeItemRow = (index: number) => {
-    const newItems = items.filter((_, i) => i !== index);
-    setItems(newItems);
-  };
-
-  // Hàm xử lý khi submit form
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
+    if (items.length === 0) {
+      alert("Vui lòng thêm ít nhất một sản phẩm vào đơn hàng.");
+      return;
+    }
+
     setIsSubmitting(true);
 
     const orderData = {
       ...customerInfo,
-      variants: items.map(item => ({
+      chi_tiet: items.map(item => ({
         id_variant: item.id_variant,
         so_luong: Number(item.so_luong)
       })),
@@ -72,7 +71,7 @@ export default function AddOrderPage() {
         alert('Tạo đơn hàng thành công!');
         router.push('/orders');
       } else {
-        throw new Error(result.message || 'Có lỗi xảy ra');
+        throw new Error(result.message || 'Có lỗi xảy ra khi tạo đơn hàng');
       }
     } catch (error: any) {
       alert(`Tạo đơn hàng thất bại: ${error.message}`);
@@ -100,20 +99,8 @@ export default function AddOrderPage() {
               </div>
             </section>
 
-            {/* Chi tiết đơn hàng */}
-            <section>
-              <h3 className="text-lg font-semibold mb-4 border-b pb-2">Chi tiết đơn hàng</h3>
-              <div className="space-y-4">
-                {items.map((item, index) => (
-                  <div key={index} className="flex items-end gap-2 p-2 border rounded-md">
-                    <div className="flex-grow"><Label>SKU sản phẩm</Label><Input name="id_variant" value={item.id_variant} onChange={(e) => handleItemChange(index, e)} placeholder="Nhập SKU của biến thể" required /></div>
-                    <div className="w-24"><Label>Số lượng</Label><Input name="so_luong" type="number" min="1" value={item.so_luong} onChange={(e) => handleItemChange(index, e)} required /></div>
-                    <Button type="button" variant="destructive" size="sm" onClick={() => removeItemRow(index)}>Xóa</Button>
-                  </div>
-                ))}
-                <Button type="button" variant="outline" onClick={addItemRow}>+ Thêm sản phẩm</Button>
-              </div>
-            </section>
+            {/* Tích hợp component OrderItemsManager */}
+            <OrderItemsManager items={items} setItems={setItems} />
 
             {/* Thông tin khác */}
             <section>
@@ -121,10 +108,9 @@ export default function AddOrderPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label>Phương thức thanh toán</Label>
-                  <Select name="phuong_thuc_thanh_toan" value={customerInfo.phuong_thuc_thanh_toan} onValueChange={(value) => setCustomerInfo(p => ({ ...p, phuong_thuc_thanh_toan: value }))}>
+                  <Select name="phuong_thuc_thanh_toan" value={customerInfo.phuong_thuc_thanh_toan} onValueChange={(value: string) => setCustomerInfo(p => ({ ...p, phuong_thuc_thanh_toan: value }))}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      {/* SỬA LỖI: Chuyển value sang chữ HOA để khớp với enum của backend */}
                       <SelectItem value="COD">Thanh toán khi nhận hàng (COD)</SelectItem>
                       <SelectItem value="VNPay">Thanh toán qua VNPay</SelectItem>
                     </SelectContent>

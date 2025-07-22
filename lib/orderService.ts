@@ -131,3 +131,12 @@ export const getReport = async (query: any) => {
         throw error.response?.data || new Error("Lỗi khi tạo đơn hàng");
     }
 };
+// HÀM MỚI: Tìm kiếm sản phẩm để thêm vào đơn hàng
+export const searchProducts = async (term: string) => {
+    try {
+        const response = await apiClient.get('/admin/order/search-products', { params: { term } });
+        return response.data;
+    } catch (error: any) {
+        throw error.response?.data || new Error("Lỗi khi tìm kiếm sản phẩm");
+    }
+};

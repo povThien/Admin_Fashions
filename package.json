@@ -50,6 +50,7 @@
     "embla-carousel-react": "8.5.1",
     "input-otp": "1.4.1",
     "js-cookie": "^3.0.5",
+    "lodash.debounce": "^4.0.8",
     "lucide-react": "^0.454.0",
     "next": "15.2.4",
     "next-themes": "latest",
@@ -71,6 +72,7 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "@types/lodash.debounce": "^4.0.9",
     "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",
