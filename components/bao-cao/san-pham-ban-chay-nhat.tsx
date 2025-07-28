@@ -3,7 +3,15 @@ import { useMemo } from "react"
 
 export default function SanPhamBanChayNhat({data}: any) {
 
-  const products = useMemo(() => data?.topProducts.map((product: any) => ({ name: product.ten_sp, sales: product.totalSold, revenue: "đ " + product.totalRevenue.toLocaleString("vi-VN") })) ?? [], [data])
+  const products = useMemo(() => {
+  if (!data || !Array.isArray(data.topProducts)) return [];
+  return data.topProducts.map((product: any) => ({
+    name: product.ten_sp,
+    sales: product.totalSold,
+    revenue: "đ " + product.totalRevenue.toLocaleString("vi-VN"),
+  }));
+}, [data]);
+console.log("📊 Data nhận được:", data);
 
   return (
     <Card>
@@ -27,14 +35,23 @@ export default function SanPhamBanChayNhat({data}: any) {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {products.map((product, index) => (
-                <tr key={index}>
-                  <td className="px-4 py-3 whitespace-nowrap">{product.name}</td>
-                  <td className="px-4 py-3 whitespace-nowrap">{product.sales}</td>
-                  <td className="px-4 py-3 whitespace-nowrap">{product.revenue}</td>
-                </tr>
-              ))}
-            </tbody>
+  {products.length === 0 ? (
+    <tr>
+      <td colSpan={3} className="px-4 py-3 text-center text-gray-500">
+        Không có dữ liệu
+      </td>
+    </tr>
+  ) : (
+    products.map((product, index) => (
+      <tr key={index}>
+        <td className="px-4 py-3 whitespace-nowrap">{product.name}</td>
+        <td className="px-4 py-3 whitespace-nowrap">{product.sales}</td>
+        <td className="px-4 py-3 whitespace-nowrap">{product.revenue}</td>
+      </tr>
+    ))
+  )}
+</tbody>
+
           </table>
         </div>
       </CardContent>
